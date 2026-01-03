@@ -20,3 +20,5 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Sunucu http://localhost:${PORT} adresinde yayında.`);
 });
+
+app.use('/api/auth', require('./routes/auth'));
