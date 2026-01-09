@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import AddMovie from './AddMovie';
-import Login from './Login'; // Login ekranını çağırdık
+import Login from './Login';
 import 'leaflet/dist/leaflet.css';
 import './App.css';
 
@@ -17,23 +17,22 @@ function MapController({ centerCoordinates }) {
 }
 
 function App() {
-  // --- DURUM YÖNETİMİ (State) ---
-  const [user, setUser] = useState(null); // Giriş yapan kullanıcı
-  const [activeTab, setActiveTab] = useState('map'); // 'map' veya 'list' (Liste görünümü için)
-  
+  const [user, setUser] = useState(null);
+  const [activeTab, setActiveTab] = useState('map'); 
   const [selectedCountry, setSelectedCountry] = useState("Dünya");
   const [movies, setMovies] = useState([]); 
   const [mapCenter, setMapCenter] = useState(null);
 
-  // --- BAŞLANGIÇ KONTROLÜ (Oturum Açık mı?) ---
+  // --- BAŞLANGIÇ ---
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
-      setUser(JSON.parse(savedUser)); // Hafızadaki kullanıcıyı geri yükle
+      setUser(JSON.parse(savedUser));
     }
     fetchMovies();
   }, []);
 
+  // --- VERİLERİ ÇEK ---
   const fetchMovies = () => {
     fetch('http://localhost:5000/api/movies')
       .then(response => response.json())
@@ -41,37 +40,57 @@ function App() {
       .catch(error => console.error("Hata:", error));
   };
 
-  // ÇIKIŞ YAP (Logout)
+  // --- SİLME İŞLEMİ (YENİ) ---
+  const handleDelete = async (id) => {
+    if (!window.confirm("Bu filmi silmek istediğine emin misin?")) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/movies/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Silinen filmi listeden anında kaldır (Sayfa yenilemeden)
+        setMovies(movies.filter(movie => movie._id !== id));
+        alert("Film silindi.");
+      } else {
+        alert("Silme işlemi başarısız.");
+      }
+    } catch (error) {
+      console.error("Silme hatası:", error);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    setUser(null); // Giriş ekranına atar
+    setUser(null);
   };
 
   const filteredMovies = selectedCountry === "Dünya" 
     ? movies 
     : movies.filter(movie => movie.country === selectedCountry);
 
-  // --- EĞER GİRİŞ YAPILMAMIŞSA LOGIN EKRANINI GÖSTER ---
   if (!user) {
     return <Login onLoginSuccess={(userData) => setUser(userData)} />;
   }
 
-  // --- EĞER GİRİŞ YAPILMIŞSA ANA EKRANI GÖSTER ---
   return (
     <div className="app-container">
       
-      {/* --- SOL PANEL (SIDEBAR) --- */}
+      {/* SOL PANEL */}
       <div className="sidebar" style={{ overflowY: 'auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h1>CINEMAP</h1>
-            <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>Hoşgeldin, <span style={{ color: 'white' }}>{user.username}</span> ({user.role})</p>
+            <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>
+              <span style={{ color: '#E50914', fontWeight: 'bold' }}>{user.username}</span> ({user.role})
+            </p>
           </div>
           <button onClick={handleLogout} style={{ background: '#333', border: '1px solid #555', color: '#ccc', padding: '5px 8px', cursor: 'pointer', fontSize: '10px' }}>ÇIKIŞ</button>
         </div>
         
-        {/* SEKME GEÇİŞİ (Harita / Liste) */}
+        {/* SEKME BUTONLARI */}
         <div style={{ display: 'flex', gap: '10px', marginTop: '20px', marginBottom: '20px' }}>
           <button 
             onClick={() => setActiveTab('map')}
@@ -87,7 +106,6 @@ function App() {
           </button>
         </div>
 
-        {/* FİLTRELEME */}
         <div className="filter-section">
           <label>Ülke Seçin:</label>
           <select onChange={(e) => setSelectedCountry(e.target.value)}>
@@ -101,12 +119,12 @@ function App() {
           </select>
         </div>
 
-        {/* FİLM EKLEME (Sadece Sinefil ve Admin görebilir) */}
+        {/* Film Ekleme: Sadece Sinefil veya Admin */}
         {(user.role === 'Sinefil' || user.role === 'Admin') && (
           <AddMovie onMovieAdded={(coords) => {
             fetchMovies();
             if(coords) setMapCenter([coords.lat, coords.lng]);
-            setActiveTab('map'); // Ekleme yapınca haritaya dön
+            setActiveTab('map');
           }} />
         )}
 
@@ -115,10 +133,10 @@ function App() {
         </div>
       </div>
 
-      {/* --- ANA İÇERİK ALANI --- */}
+      {/* İÇERİK ALANI */}
       <div className="map-area" style={{ background: '#141414', overflowY: 'auto' }}>
         
-        {/* DURUM 1: HARİTA GÖRÜNÜMÜ */}
+        {/* HARİTA */}
         {activeTab === 'map' && (
           <MapContainer center={[39.93, 32.85]} zoom={4} style={{ height: "100vh", width: "100%" }}>
             <MapController centerCoordinates={mapCenter} />
@@ -143,6 +161,7 @@ function App() {
                         <div>{movie.director}</div>
                       </div>
                     </div>
+                    <div style={{marginTop: '5px', fontSize: '10px', color: '#aaa'}}>Ekleyen: {movie.addedBy || 'Anonim'}</div>
                   </div>
                 </Popup>
               </CircleMarker>
@@ -150,28 +169,33 @@ function App() {
           </MapContainer>
         )}
 
-        {/* DURUM 2: LİSTE GÖRÜNÜMÜ (Senin istediğin tablo) */}
+        {/* LİSTE */}
         {activeTab === 'list' && (
           <div style={{ padding: '40px', color: 'white' }}>
             <h2 style={{ borderBottom: '1px solid #333', paddingBottom: '20px' }}>FİLM LİSTESİ ({selectedCountry})</h2>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px' }}>
               {filteredMovies.map(movie => (
-                <div key={movie._id} style={{ background: '#222', padding: '15px', borderRadius: '5px' }}>
+                <div key={movie._id} style={{ background: '#222', padding: '15px', borderRadius: '5px', position: 'relative' }}>
+                  
                   {movie.poster && <img src={movie.poster} alt="Poster" style={{ width: '100%', borderRadius: '4px' }} />}
                   <h3 style={{ fontSize: '1rem', marginTop: '10px' }}>{movie.title}</h3>
                   <p style={{ color: '#888', fontSize: '0.8rem' }}>{movie.city}, {movie.country}</p>
-                  <p style={{ color: '#E50914', fontWeight: 'bold' }}>★ {movie.imdb}</p>
+                  <div style={{display:'flex', justifyContent:'space-between'}}>
+                    <p style={{ color: '#E50914', fontWeight: 'bold' }}>★ {movie.imdb}</p>
+                    <p style={{ fontSize: '0.7rem', color: '#666', alignSelf:'center' }}>{movie.addedBy}</p>
+                  </div>
                   
-                  {/* SİLME BUTONU (Sadece Admin veya Ekleyen Kişi Görebilir - Şimdilik herkese açık yapalım test için) */}
-                  <button 
-                    style={{ width: '100%', background: 'transparent', border: '1px solid #E50914', color: '#E50914', padding: '5px', cursor: 'pointer', marginTop: '10px' }}
-                    onClick={() => {
-                        // Burada silme fonksiyonu olacak
-                        alert("Silme özelliği bir sonraki adımda eklenecek!");
-                    }}
-                  >
-                    SİL 🗑️
-                  </button>
+                  {/* --- SİLME BUTONU MANTIĞI --- */}
+                  {/* Eğer Kullanıcı Admin ise VEYA Filmi ekleyen kişi şu anki kullanıcı ise buton görünür */}
+                  {(user.role === 'Admin' || user.username === movie.addedBy) && (
+                    <button 
+                      style={{ width: '100%', background: '#b20d18', color: 'white', border: 'none', padding: '8px', cursor: 'pointer', marginTop: '10px', borderRadius: '3px', fontWeight: 'bold' }}
+                      onClick={() => handleDelete(movie._id)}
+                    >
+                      SİL 🗑️
+                    </button>
+                  )}
+
                 </div>
               ))}
             </div>
