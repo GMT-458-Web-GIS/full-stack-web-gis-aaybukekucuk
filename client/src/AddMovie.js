@@ -1,17 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css'; 
 
-const AddMovie = ({ onMovieAdded }) => {
+// --- AKILLI ŞEHİR LİSTESİ ---
+// Kullanıcı yazmakla uğraşmasın, buradan seçsin.
+const CITY_DATA = {
+  "Türkiye": ["İstanbul", "Ankara", "İzmir", "Eskişehir", "Antalya", "Kars", "Mardin", "Trabzon"],
+  "ABD": ["New York", "Los Angeles", "Chicago", "Las Vegas", "San Francisco", "Washington", "Boston"],
+  "İngiltere": ["London", "Manchester", "Liverpool", "Oxford", "Edinburgh"],
+  "Fransa": ["Paris", "Lyon", "Marseille", "Nice", "Bordeaux"],
+  "İtalya": ["Roma", "Venice", "Florence", "Milan", "Naples", "Arezzo", "Sicily"], // Life is Beautiful: Arezzo, Godfather: Sicily
+  "Japonya": ["Tokyo", "Kyoto", "Osaka", "Hiroshima"],
+  "Almanya": ["Berlin", "Munich", "Hamburg", "Frankfurt"]
+};
+
+const AddMovie = ({ onMovieAdded, currentUser }) => {
   const [title, setTitle] = useState('');
   const [movieData, setMovieData] = useState(null);
   
   // Konum Bilgileri
-  const [city, setCity] = useState('');
   const [country, setCountry] = useState('Türkiye'); 
-  const [user, setUser] = useState('Elvin (Yönetici)'); 
+  const [city, setCity] = useState(CITY_DATA["Türkiye"][0]); // İlk şehri seçili getir
+  const [customCity, setCustomCity] = useState(''); // "Diğer" seçilirse aktif olur
   
   const [loading, setLoading] = useState(false);
   const [statusMsg, setStatusMsg] = useState(''); 
+
+  // Ülke değişince şehir listesini güncelle
+  useEffect(() => {
+    setCity(CITY_DATA[country][0]);
+  }, [country]);
 
   // --- 1. OMDb API'den Film Çek ---
   const fetchMovieData = async () => {
@@ -19,7 +36,6 @@ const AddMovie = ({ onMovieAdded }) => {
     setLoading(true);
     setStatusMsg('Film aranıyor...');
     
-    // API KEY'İNİ UNUTMA (Tırnak içinde!)
     const API_KEY = "fff2b072"; 
 
     try {
@@ -28,9 +44,9 @@ const AddMovie = ({ onMovieAdded }) => {
       
       if (data.Response === "True") {
         setMovieData(data);
-        setStatusMsg('Film bulundu! Şimdi şehri girin.');
+        setStatusMsg('Film bulundu! Şimdi konumu seçin.');
       } else {
-        alert("Film bulunamadı!");
+        alert("Film bulunamadı! İngilizce ismini denediniz mi?");
         setMovieData(null);
         setStatusMsg('');
       }
@@ -40,42 +56,28 @@ const AddMovie = ({ onMovieAdded }) => {
     setLoading(false);
   };
 
-  // --- 2. Şehir İsminden Koordinat Bul (Nominatim - Structured Query) ---
-  const getCoordinates = async (cityName, countryName) => {
-    try {
-      // Daha hassas arama için 'structured query' kullanıyoruz
-      // city=...&country=... diyerek nokta atışı yapıyoruz.
-      const url = `https://nominatim.openstreetmap.org/search?format=json&city=${cityName}&country=${countryName}`;
-      
-      const response = await fetch(url);
-      const data = await response.json();
-
-      if (data && data.length > 0) {
-        return {
-          lat: parseFloat(data[0].lat),
-          lng: parseFloat(data[0].lon)
-        };
-      } else {
-        return null;
-      }
-    } catch (error) {
-      console.error("Konum hatası:", error);
-      return null;
-    }
-  };
-
-  // --- 3. Veritabanına Kaydet ---
+  // --- 2. Koordinat Bul ve Kaydet ---
   const handleSave = async () => {
-    if (!movieData || !city) return alert("Lütfen şehir ismini girin!");
+    const selectedCity = city === "Diğer" ? customCity : city;
+    if (!movieData || !selectedCity) return alert("Lütfen şehir seçin!");
 
-    setStatusMsg('Konum aranıyor ve kaydediliyor...');
+    setStatusMsg('Konum kaydediliyor...');
 
-    // A) Koordinatı Bul
-    const coords = await getCoordinates(city, country);
+    // A) Koordinatı Bul (Nominatim API)
+    // "q" parametresini kullanmak daha esnektir
+    let coords = null;
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${selectedCity}, ${country}`);
+      const data = await response.json();
+      if (data && data.length > 0) {
+        coords = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+      }
+    } catch (err) {
+      console.error(err);
+    }
 
     if (!coords) {
-      setStatusMsg('Hata: Bu şehir bulunamadı!');
-      alert(`"${city}, ${country}" haritada bulunamadı. Yazımı kontrol edin.`);
+      alert(`"${selectedCity}" haritada bulunamadı. Lütfen büyük bir şehir seçin.`);
       return;
     }
 
@@ -88,12 +90,12 @@ const AddMovie = ({ onMovieAdded }) => {
       imdb: parseFloat(movieData.imdbRating),
       poster: movieData.Poster,
       country: country,
-      city: city,
+      city: selectedCity,
       coordinates: coords, 
-      addedBy: user 
+      addedBy: currentUser.username 
     };
 
-    // C) Sunucuya Gönder
+    // C) Kaydet
     try {
       const response = await fetch('http://localhost:5000/api/movies', {
         method: 'POST',
@@ -102,13 +104,9 @@ const AddMovie = ({ onMovieAdded }) => {
       });
       
       if (response.ok) {
-        alert(`Film Eklendi! Harita ${city} konumuna gidiyor... ✈️`);
-        
-        // ÖNEMLİ: Haritayı oraya odaklamak için koordinatları yukarı (App.js'e) gönderiyoruz
+        alert(`Film Eklendi! Harita ${selectedCity} konumuna gidiyor... ✈️`);
         onMovieAdded(coords); 
-        
-        // Temizlik
-        setMovieData(null); setTitle(''); setCity(''); setStatusMsg('');
+        setMovieData(null); setTitle(''); setStatusMsg('');
       }
     } catch (error) {
       alert("Sunucu hatası!");
@@ -117,20 +115,15 @@ const AddMovie = ({ onMovieAdded }) => {
 
   return (
     <div className="add-movie-panel" style={{ padding: '20px', background: '#1a1a1a', marginTop: '20px', borderTop: '2px solid #E50914' }}>
-      <h3 style={{ color: '#E50914', marginTop: 0 }}>FİLM EKLE</h3>
+      <h3 style={{ color: '#E50914', marginTop: 0, borderBottom: '1px solid #333', paddingBottom: '10px' }}>
+        FİLM EKLE
+      </h3>
       
-      <div style={{ marginBottom: '15px' }}>
-        <label style={{ display: 'block', color: '#888', fontSize: '12px' }}>Kullanıcı:</label>
-        <select value={user} onChange={(e) => setUser(e.target.value)} style={{ width: '100%', padding: '8px', background: '#333', color: 'white', border: 'none' }}>
-          <option value="Elvin (Yönetici)">Elvin (Yönetici)</option>
-          <option value="Ahmet (Kullanıcı)">Ahmet (Kullanıcı)</option>
-        </select>
-      </div>
-
+      {/* 1. ADIM: ARAMA */}
       <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
         <input 
           type="text" 
-          placeholder="Film Adı (İngilizce)..." 
+          placeholder="Film Adı (Örn: Godfather)..." 
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           style={{ flex: 1, padding: '10px', background: '#333', border: '1px solid #444', color: 'white' }}
@@ -140,41 +133,58 @@ const AddMovie = ({ onMovieAdded }) => {
         </button>
       </div>
 
-      {statusMsg && <p style={{ fontSize: '12px', color: '#ccc' }}>{statusMsg}</p>}
+      {statusMsg && <p style={{ fontSize: '12px', color: '#ccc', fontStyle: 'italic' }}>{statusMsg}</p>}
 
+      {/* 2. ADIM: SONUÇ VE KONUM (Sadece film bulununca görünür) */}
       {movieData && (
-        <div style={{ background: '#222', padding: '10px', borderRadius: '5px' }}>
-          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-            <img src={movieData.Poster} alt="Poster" style={{ width: '50px', height: '75px' }} />
+        <div style={{ background: '#222', padding: '15px', borderRadius: '5px', animation: 'fadeIn 0.5s' }}>
+          
+          {/* Film Kartı */}
+          <div style={{ display: 'flex', gap: '15px', marginBottom: '15px', borderBottom: '1px solid #444', paddingBottom: '15px' }}>
+            <img src={movieData.Poster} alt="Poster" style={{ width: '60px', height: '90px', objectFit: 'cover' }} />
             <div>
-              <strong style={{ color: 'white', display: 'block' }}>{movieData.Title}</strong>
-              <small style={{ color: '#ccc' }}>{movieData.Year}</small>
+              <strong style={{ color: 'white', display: 'block', fontSize: '1.1rem' }}>{movieData.Title}</strong>
+              <small style={{ color: '#ccc' }}>{movieData.Year} • {movieData.Director}</small>
+              <div style={{ color: '#f5c518', fontWeight: 'bold', marginTop: '5px' }}>★ {movieData.imdbRating}</div>
             </div>
           </div>
 
+          {/* Konum Seçimi */}
           <div style={{ display: 'grid', gap: '10px' }}>
-            <label style={{ color: '#E50914', fontSize: '12px', fontWeight: 'bold' }}>KONUM (Otomatik Bulunacak):</label>
+            <label style={{ color: '#E50914', fontSize: '12px', fontWeight: 'bold' }}>ÇEKİLDİĞİ YERİ SEÇİN:</label>
             
-            <input 
-              type="text" 
-              placeholder="Şehir (Örn: London)" 
-              value={city} 
-              onChange={e => setCity(e.target.value)} 
-              style={{ padding: '10px', background: '#333', color: 'white', border: '1px solid #444' }} 
-            />
-            
-            <select value={country} onChange={e => setCountry(e.target.value)} style={{ padding: '10px', background: '#333', color: 'white', border: '1px solid #444' }}>
-                <option value="Türkiye">Türkiye</option>
-                <option value="İngiltere">İngiltere</option>
-                <option value="ABD">ABD</option>
-                <option value="Fransa">Fransa</option>
-                <option value="İtalya">İtalya</option>
-                <option value="Japonya">Japonya</option>
-                <option value="Almanya">Almanya</option>
+            {/* Ülke Seçimi */}
+            <select 
+              value={country} 
+              onChange={e => setCountry(e.target.value)} 
+              style={{ padding: '10px', background: '#333', color: 'white', border: '1px solid #444' }}
+            >
+                {Object.keys(CITY_DATA).map(c => <option key={c} value={c}>{c}</option>)}
             </select>
 
-            <button onClick={handleSave} style={{ width: '100%', background: '#28a745', color: 'white', padding: '12px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>
-              KAYDET VE GİT ✈️
+            {/* Şehir Seçimi (Otomatik Değişir) */}
+            <select 
+              value={city} 
+              onChange={e => setCity(e.target.value)} 
+              style={{ padding: '10px', background: '#333', color: 'white', border: '1px solid #444' }}
+            >
+                {CITY_DATA[country].map(c => <option key={c} value={c}>{c}</option>)}
+                <option value="Diğer">Diğer (Listede Yok)</option>
+            </select>
+
+            {/* Eğer 'Diğer' seçilirse manuel giriş açılır */}
+            {city === "Diğer" && (
+              <input 
+                type="text" 
+                placeholder="Şehir Adını Yazın..." 
+                value={customCity} 
+                onChange={e => setCustomCity(e.target.value)} 
+                style={{ padding: '10px', background: '#444', color: 'white', border: '1px solid #E50914' }} 
+              />
+            )}
+
+            <button onClick={handleSave} style={{ width: '100%', background: '#28a745', color: 'white', padding: '12px', border: 'none', cursor: 'pointer', fontWeight: 'bold', marginTop: '5px' }}>
+              KAYDET 💾
             </button>
           </div>
         </div>

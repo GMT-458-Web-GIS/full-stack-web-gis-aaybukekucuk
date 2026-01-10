@@ -1,27 +1,53 @@
-// server/index.js
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const nodemailer = require('nodemailer'); // Yeni Paket
 require('dotenv').config();
 
-// Modelleri Çağır
-const User = require('./models/User'); 
-
 const app = express();
-app.use(cors());
+
+// --- MAİL AYARLARI (GMAIL) ---
+
+const EMAIL_USER = "aaybukekucuk@gmail.com"; 
+const EMAIL_PASS = "kgzg oyjw ditc rbeb"; 
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: EMAIL_USER,
+    pass: EMAIL_PASS
+  }
+});
+
+app.use(cors({ origin: '*', methods: ['GET', 'POST', 'DELETE', 'PUT'] }));
 app.use(express.json());
 
-// Veritabanı Bağlantısı
+// Loglama
+app.use((req, res, next) => {
+    console.log(`📩 ${req.method} ${req.url}`);
+    next();
+});
+
 const MONGO_URI = process.env.MONGO_URI;
 mongoose.connect(MONGO_URI)
   .then(() => console.log("✅ MongoDB Bağlantısı Başarılı!"))
-  .catch((err) => console.error("Bağlantı Hatası:", err));
+  .catch((err) => console.error("❌ Veritabanı Hatası:", err));
 
-// --- FILM MODELİ (Güncellendi) ---
+// --- MODELLER ---
+const UserSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, default: 'Ziyaretçi' },
+  // YENİ GÜVENLİK ALANLARI:
+  isVerified: { type: Boolean, default: false }, // Onaylı mı?
+  verificationCode: { type: String } // 6 Haneli Kod
+});
+const User = mongoose.model('User', UserSchema);
+
 const MovieSchema = new mongoose.Schema({
-    title: { type: String, required: true },
+    title: String,
     director: String,
     year: Number,
     genre: String,
@@ -30,86 +56,100 @@ const MovieSchema = new mongoose.Schema({
     country: String,
     city: String,
     coordinates: { lat: Number, lng: Number },
-    addedBy: String // Filmi ekleyen kullanıcının adı
+    addedBy: String
 });
 const Movie = mongoose.model('Movie', MovieSchema);
 
-// Gizli Anahtar (Bunu .env dosyasına da koyabilirsin ama şimdilik burada)
 const JWT_SECRET = "cok_gizli_anahtar_123";
 
-// --- 1. AUTH API (KAYIT OL & GİRİŞ YAP) ---
+// --- API YOLLARI ---
 
-// KAYIT OL (Register)
+// 1. KAYIT OL (Kod Gönder)
 app.post('/api/register', async (req, res) => {
-    const { username, password, role } = req.body;
+    const { email, password, role } = req.body;
     try {
-        // Şifreyi Kriptola
+        // Rastgele 6 haneli kod üret
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        
         const hashedPassword = await bcrypt.hash(password, 10);
         
+        // Eski kaydı sil (Eğer onaylanmamışsa)
+        await User.deleteOne({ email, isVerified: false });
+
         const newUser = new User({ 
-            username, 
+            email, 
             password: hashedPassword, 
-            role: role || 'Ziyaretçi' 
+            role: role || 'Ziyaretçi',
+            verificationCode: code,
+            isVerified: false 
         });
         
         await newUser.save();
-        res.status(201).json({ message: "Kullanıcı oluşturuldu!" });
+
+        // Mail Gönder
+        await transporter.sendMail({
+            from: 'Cinemap Güvenlik <no-reply@cinemap.com>',
+            to: email,
+            subject: 'Cinemap Onay Kodunuz',
+            text: `Hoşgeldiniz! Giriş yapmak için onay kodunuz: ${code}`
+        });
+
+        console.log(`✉️ Mail gönderildi: ${email} -> Kod: ${code}`);
+        res.status(201).json({ message: "Onay kodu maile gönderildi!" });
+
     } catch (err) {
-        res.status(500).json({ error: "Kayıt başarısız. Kullanıcı adı alınmış olabilir." });
+        console.error("Kayıt Hatası:", err);
+        res.status(500).json({ error: "Mail gönderilemedi veya kullanıcı zaten var." });
     }
 });
 
-// GİRİŞ YAP (Login)
-app.post('/api/login', async (req, res) => {
-    const { username, password } = req.body;
+// 2. KODU DOĞRULA (Verify)
+app.post('/api/verify', async (req, res) => {
+    const { email, code } = req.body;
     try {
-        const user = await User.findOne({ username });
+        const user = await User.findOne({ email });
+        if (!user) return res.status(400).json({ error: "Kullanıcı bulunamadı." });
+
+        if (user.verificationCode === code) {
+            user.isVerified = true;
+            user.verificationCode = null; // Kodu temizle
+            await user.save();
+            res.json({ message: "Hesap onaylandı! Giriş yapabilirsiniz." });
+        } else {
+            res.status(400).json({ error: "Hatalı Kod!" });
+        }
+    } catch (err) {
+        res.status(500).json({ error: "Doğrulama hatası." });
+    }
+});
+
+// 3. GİRİŞ YAP (Sadece Onaylıysa)
+app.post('/api/login', async (req, res) => {
+    const { email, password } = req.body;
+    try {
+        const user = await User.findOne({ email });
         if (!user) return res.status(400).json({ error: "Kullanıcı bulunamadı!" });
 
         // Şifre Kontrolü
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return res.status(400).json({ error: "Hatalı şifre!" });
 
-        // Token Oluştur (Kimlik Kartı)
-        const token = jwt.sign({ id: user._id, role: user.role, username: user.username }, JWT_SECRET);
-        
-        res.json({ token, user: { username: user.username, role: user.role } });
+        // ONAY KONTROLÜ
+        if (!user.isVerified) {
+            return res.status(400).json({ error: "Lütfen önce mailinize gelen kod ile hesabınızı doğrulayın." });
+        }
+
+        const token = jwt.sign({ id: user._id, role: user.role, email: user.email }, JWT_SECRET);
+        res.json({ token, user: { username: user.email, role: user.role } }); 
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// --- 2. MOVIE API (CRUD İŞLEMLERİ) ---
+// Diğer API'ler (Movies)
+app.get('/api/movies', async (req, res) => { const m = await Movie.find(); res.json(m); });
+app.post('/api/movies', async (req, res) => { try { const n = new Movie(req.body); await n.save(); res.json(n); } catch(e){ res.status(500).json({error:e.message})} });
+app.delete('/api/movies/:id', async (req, res) => { try { await Movie.findByIdAndDelete(req.params.id); res.json({msg:"Silindi"}); } catch(e){ res.status(500).json({error:"Hata"})} });
 
-// GET (Oku)
-app.get('/api/movies', async (req, res) => {
-    const movies = await Movie.find();
-    res.json(movies);
-});
-
-// POST (Ekle)
-app.post('/api/movies', async (req, res) => {
-    try {
-        const newMovie = new Movie(req.body);
-        await newMovie.save();
-        res.json(newMovie);
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-// DELETE (Sil) - Ödev Gereksinimi
-app.delete('/api/movies/:id', async (req, res) => {
-    try {
-        await Movie.findByIdAndDelete(req.params.id);
-        res.json({ message: "Film silindi." });
-    } catch (err) {
-        res.status(500).json({ error: "Silme hatası." });
-    }
-});
-
-// Sunucuyu Başlat
 const PORT = 5000;
-app.listen(PORT, () => {
-    console.log(`🚀 Server ${PORT} portunda çalışıyor...`);
-});
+app.listen(PORT, () => console.log(`🚀 Server ${PORT} portunda çalışıyor...`));

@@ -119,14 +119,14 @@ function App() {
           </select>
         </div>
 
-        {/* Film Ekleme: Sadece Sinefil veya Admin */}
-        {(user.role === 'Sinefil' || user.role === 'Admin') && (
-          <AddMovie onMovieAdded={(coords) => {
-            fetchMovies();
-            if(coords) setMapCenter([coords.lat, coords.lng]);
-            setActiveTab('map');
-          }} />
-        )}
+          <AddMovie 
+            currentUser={user}  // <- İŞTE BU EKLENDİ (Senin bilgilerini panele yollar)
+            onMovieAdded={(coords) => {
+              fetchMovies();
+              if(coords) setMapCenter([coords.lat, coords.lng]);
+              setActiveTab('map');
+            }} 
+         />
 
         <div style={{ marginTop: 'auto', borderTop: '1px solid #333', paddingTop: '1rem', paddingBottom: '20px' }}>
           <span style={{ fontSize: '10px', color: '#666' }}>GMT 458 - Web GIS</span>
