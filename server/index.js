@@ -3,153 +3,124 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer'); // Yeni Paket
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const app = express();
 
-// --- MAİL AYARLARI (GMAIL) ---
-
+// --- MAIL SETTINGS ---
 const EMAIL_USER = "aaybukekucuk@gmail.com"; 
 const EMAIL_PASS = "kgzg oyjw ditc rbeb"; 
 
 const transporter = nodemailer.createTransport({
   service: 'gmail',
-  auth: {
-    user: EMAIL_USER,
-    pass: EMAIL_PASS
-  }
+  auth: { user: EMAIL_USER, pass: EMAIL_PASS }
 });
 
 app.use(cors({ origin: '*', methods: ['GET', 'POST', 'DELETE', 'PUT'] }));
 app.use(express.json());
 
-// Loglama
+// Logging
 app.use((req, res, next) => {
-    console.log(`📩 ${req.method} ${req.url}`);
+    console.log(`📩 REQUEST: ${req.method} ${req.url}`);
     next();
 });
 
+// Database
 const MONGO_URI = process.env.MONGO_URI;
 mongoose.connect(MONGO_URI)
-  .then(() => console.log("✅ MongoDB Bağlantısı Başarılı!"))
-  .catch((err) => console.error("❌ Veritabanı Hatası:", err));
+  .then(() => console.log("✅ MongoDB Connected!"))
+  .catch((err) => console.error("❌ DB Error:", err));
 
-// --- MODELLER ---
+// --- MODELS ---
 const UserSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, default: 'Ziyaretçi' },
-  // YENİ GÜVENLİK ALANLARI:
-  isVerified: { type: Boolean, default: false }, // Onaylı mı?
-  verificationCode: { type: String } // 6 Haneli Kod
+  role: { type: String, default: 'Viewer', enum: ['Admin', 'Cinephile', 'Viewer'] },
+  isVerified: { type: Boolean, default: false },
+  verificationCode: { type: String }
 });
 const User = mongoose.model('User', UserSchema);
 
 const MovieSchema = new mongoose.Schema({
-    title: String,
-    director: String,
-    year: Number,
-    genre: String,
-    imdb: Number,
-    poster: String,
-    country: String,
-    city: String,
-    coordinates: { lat: Number, lng: Number },
+    title: String, director: String, year: Number, genre: String, imdb: Number,
+    poster: String, country: String, city: String, coordinates: { lat: Number, lng: Number },
     addedBy: String
 });
 const Movie = mongoose.model('Movie', MovieSchema);
 
-const JWT_SECRET = "cok_gizli_anahtar_123";
+const JWT_SECRET = "secret_key_123";
 
-// --- API YOLLARI ---
-
-// 1. KAYIT OL (Kod Gönder)
+// --- AUTH ROUTES ---
 app.post('/api/register', async (req, res) => {
-    const { email, password, role } = req.body;
+    const { username, email, password, role } = req.body;
     try {
-        // Rastgele 6 haneli kod üret
+        const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+        if (existingUser) {
+            if (existingUser.isVerified) return res.status(400).json({ error: "User exists." });
+            else await User.deleteOne({ _id: existingUser._id });
+        }
         const code = Math.floor(100000 + Math.random() * 900000).toString();
-        
         const hashedPassword = await bcrypt.hash(password, 10);
-        
-        // Eski kaydı sil (Eğer onaylanmamışsa)
-        await User.deleteOne({ email, isVerified: false });
-
-        const newUser = new User({ 
-            email, 
-            password: hashedPassword, 
-            role: role || 'Ziyaretçi',
-            verificationCode: code,
-            isVerified: false 
-        });
-        
+        const newUser = new User({ username, email, password: hashedPassword, role: role || 'Viewer', verificationCode: code, isVerified: false });
         await newUser.save();
-
-        // Mail Gönder
+        
         await transporter.sendMail({
-            from: 'Cinemap Güvenlik <no-reply@cinemap.com>',
-            to: email,
-            subject: 'Cinemap Onay Kodunuz',
-            text: `Hoşgeldiniz! Giriş yapmak için onay kodunuz: ${code}`
+            from: 'Cinemap Security', to: email, subject: 'Cinemap Code',
+            html: `<h3>Code: <span style="color:red">${code}</span></h3>`
         });
-
-        console.log(`✉️ Mail gönderildi: ${email} -> Kod: ${code}`);
-        res.status(201).json({ message: "Onay kodu maile gönderildi!" });
-
-    } catch (err) {
-        console.error("Kayıt Hatası:", err);
-        res.status(500).json({ error: "Mail gönderilemedi veya kullanıcı zaten var." });
-    }
+        res.status(201).json({ message: "Code sent." });
+    } catch (err) { res.status(500).json({ error: "Register failed." }); }
 });
 
-// 2. KODU DOĞRULA (Verify)
 app.post('/api/verify', async (req, res) => {
     const { email, code } = req.body;
     try {
         const user = await User.findOne({ email });
-        if (!user) return res.status(400).json({ error: "Kullanıcı bulunamadı." });
-
-        if (user.verificationCode === code) {
-            user.isVerified = true;
-            user.verificationCode = null; // Kodu temizle
-            await user.save();
-            res.json({ message: "Hesap onaylandı! Giriş yapabilirsiniz." });
-        } else {
-            res.status(400).json({ error: "Hatalı Kod!" });
-        }
-    } catch (err) {
-        res.status(500).json({ error: "Doğrulama hatası." });
-    }
+        if (!user || user.verificationCode !== code) return res.status(400).json({ error: "Invalid Code" });
+        user.isVerified = true; user.verificationCode = null;
+        await user.save();
+        res.json({ message: "Verified" });
+    } catch (err) { res.status(500).json({ error: "Error" }); }
 });
 
-// 3. GİRİŞ YAP (Sadece Onaylıysa)
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     try {
         const user = await User.findOne({ email });
-        if (!user) return res.status(400).json({ error: "Kullanıcı bulunamadı!" });
-
-        // Şifre Kontrolü
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ error: "Hatalı şifre!" });
-
-        // ONAY KONTROLÜ
-        if (!user.isVerified) {
-            return res.status(400).json({ error: "Lütfen önce mailinize gelen kod ile hesabınızı doğrulayın." });
-        }
-
-        const token = jwt.sign({ id: user._id, role: user.role, email: user.email }, JWT_SECRET);
-        res.json({ token, user: { username: user.email, role: user.role } }); 
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+        if (!user) return res.status(400).json({ error: "User not found" });
+        if (!await bcrypt.compare(password, user.password)) return res.status(400).json({ error: "Invalid password" });
+        if (!user.isVerified) return res.status(400).json({ error: "Not verified" });
+        
+        const token = jwt.sign({ id: user._id, role: user.role, username: user.username }, JWT_SECRET);
+        res.json({ token, user: { username: user.username, role: user.role, email: user.email } }); 
+    } catch (err) { res.status(500).json({ error: "Error" }); }
 });
 
-// Diğer API'ler (Movies)
+// --- MOVIE ROUTES ---
 app.get('/api/movies', async (req, res) => { const m = await Movie.find(); res.json(m); });
 app.post('/api/movies', async (req, res) => { try { const n = new Movie(req.body); await n.save(); res.json(n); } catch(e){ res.status(500).json({error:e.message})} });
-app.delete('/api/movies/:id', async (req, res) => { try { await Movie.findByIdAndDelete(req.params.id); res.json({msg:"Silindi"}); } catch(e){ res.status(500).json({error:"Hata"})} });
+app.delete('/api/movies/:id', async (req, res) => { try { await Movie.findByIdAndDelete(req.params.id); res.json({msg:"Deleted"}); } catch(e){ res.status(500).json({error:"Error"})} });
+
+// YENİ: UPDATE (DÜZENLEME) - Ödevdeki PUT gereksinimi
+app.put('/api/movies/:id', async (req, res) => {
+    try {
+        const updatedMovie = await Movie.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        res.json(updatedMovie);
+    } catch (err) { res.status(500).json({ error: "Update failed" }); }
+});
+
+// --- ADMIN ROUTES (KULLANICI YÖNETİMİ) ---
+app.get('/api/users', async (req, res) => {
+    try { const users = await User.find({}, '-password -verificationCode'); res.json(users); } // Şifreleri gönderme
+    catch (err) { res.status(500).json({ error: "Error" }); }
+});
+
+app.delete('/api/users/:id', async (req, res) => {
+    try { await User.findByIdAndDelete(req.params.id); res.json({ message: "User banned" }); }
+    catch (err) { res.status(500).json({ error: "Error" }); }
+});
 
 const PORT = 5000;
-app.listen(PORT, () => console.log(`🚀 Server ${PORT} portunda çalışıyor...`));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}...`));
