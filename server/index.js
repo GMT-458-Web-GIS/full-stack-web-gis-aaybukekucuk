@@ -8,7 +8,7 @@ require('dotenv').config();
 
 const app = express();
 
-// --- MAIL SETTINGS ---
+// --- MAIL SETTINGS (Kendi bilgilerini buraya yaz) ---
 const EMAIL_USER = "aaybukekucuk@gmail.com"; 
 const EMAIL_PASS = "kgzg oyjw ditc rbeb"; 
 
@@ -33,13 +33,15 @@ mongoose.connect(MONGO_URI)
   .catch((err) => console.error("❌ DB Error:", err));
 
 // --- MODELS ---
+
 const UserSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, default: 'Viewer', enum: ['Admin', 'Cinephile', 'Viewer'] },
   isVerified: { type: Boolean, default: false },
-  verificationCode: { type: String }
+  verificationCode: { type: String },
+  favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Movie' }] 
 });
 const User = mongoose.model('User', UserSchema);
 
@@ -52,7 +54,9 @@ const Movie = mongoose.model('Movie', MovieSchema);
 
 const JWT_SECRET = "secret_key_123";
 
-// --- AUTH ROUTES ---
+// --- ROUTES ---
+
+// REGISTER
 app.post('/api/register', async (req, res) => {
     const { username, email, password, role } = req.body;
     try {
@@ -63,7 +67,8 @@ app.post('/api/register', async (req, res) => {
         }
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = new User({ username, email, password: hashedPassword, role: role || 'Viewer', verificationCode: code, isVerified: false });
+        
+        const newUser = new User({ username, email, password: hashedPassword, role: role || 'Viewer', verificationCode: code, isVerified: false, favorites: [] });
         await newUser.save();
         
         await transporter.sendMail({
@@ -74,6 +79,7 @@ app.post('/api/register', async (req, res) => {
     } catch (err) { res.status(500).json({ error: "Register failed." }); }
 });
 
+// VERIFY
 app.post('/api/verify', async (req, res) => {
     const { email, code } = req.body;
     try {
@@ -85,6 +91,7 @@ app.post('/api/verify', async (req, res) => {
     } catch (err) { res.status(500).json({ error: "Error" }); }
 });
 
+// LOGIN
 app.post('/api/login', async (req, res) => {
     const { email, password } = req.body;
     try {
@@ -94,29 +101,69 @@ app.post('/api/login', async (req, res) => {
         if (!user.isVerified) return res.status(400).json({ error: "Not verified" });
         
         const token = jwt.sign({ id: user._id, role: user.role, username: user.username }, JWT_SECRET);
-        res.json({ token, user: { username: user.username, role: user.role, email: user.email } }); 
+        
+        res.json({ 
+            token, 
+            user: { 
+                _id: user._id, 
+                username: user.username, 
+                role: user.role, 
+                email: user.email,
+                favorites: user.favorites 
+            } 
+        }); 
     } catch (err) { res.status(500).json({ error: "Error" }); }
 });
 
-// --- MOVIE ROUTES ---
+// --- FAVORİ EKLE / ÇIKAR (DÜZELTİLDİ) ---
+app.post('/api/users/:id/favorites', async (req, res) => {
+    const { movieId } = req.body;
+    try {
+        const user = await User.findById(req.params.id);
+        
+        // HATA ÇÖZÜMÜ: ID'leri String'e çevirerek karşılaştır
+        // Böylece ObjectId("123") ile "123" aynı kabul edilir.
+        const strFavorites = user.favorites.map(id => id.toString());
+
+        if (strFavorites.includes(movieId)) {
+            // VARSA ÇIKAR
+            user.favorites = user.favorites.filter(id => id.toString() !== movieId);
+        } else {
+            // YOKSA EKLE
+            user.favorites.push(movieId);
+        }
+        
+        await user.save();
+        res.json({ message: "Updated", favorites: user.favorites });
+        
+    } catch (err) {
+        console.error("Fav Error:", err);
+        res.status(500).json({ error: "Could not update favorites" });
+    }
+});
+
+app.get('/api/users/:id/favorites', async (req, res) => {
+    try {
+        const user = await User.findById(req.params.id);
+        res.json(user.favorites);
+    } catch (err) { res.status(500).json({ error: "Error" }); }
+});
+
+
+// MOVIE ROUTES
 app.get('/api/movies', async (req, res) => { const m = await Movie.find(); res.json(m); });
 app.post('/api/movies', async (req, res) => { try { const n = new Movie(req.body); await n.save(); res.json(n); } catch(e){ res.status(500).json({error:e.message})} });
 app.delete('/api/movies/:id', async (req, res) => { try { await Movie.findByIdAndDelete(req.params.id); res.json({msg:"Deleted"}); } catch(e){ res.status(500).json({error:"Error"})} });
-
-// YENİ: UPDATE (DÜZENLEME) - Ödevdeki PUT gereksinimi
 app.put('/api/movies/:id', async (req, res) => {
-    try {
-        const updatedMovie = await Movie.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        res.json(updatedMovie);
-    } catch (err) { res.status(500).json({ error: "Update failed" }); }
+    try { const updatedMovie = await Movie.findByIdAndUpdate(req.params.id, req.body, { new: true }); res.json(updatedMovie); } 
+    catch (err) { res.status(500).json({ error: "Update failed" }); }
 });
 
-// --- ADMIN ROUTES (KULLANICI YÖNETİMİ) ---
+// ADMIN ROUTES
 app.get('/api/users', async (req, res) => {
-    try { const users = await User.find({}, '-password -verificationCode'); res.json(users); } // Şifreleri gönderme
+    try { const users = await User.find({}, '-password -verificationCode'); res.json(users); } 
     catch (err) { res.status(500).json({ error: "Error" }); }
 });
-
 app.delete('/api/users/:id', async (req, res) => {
     try { await User.findByIdAndDelete(req.params.id); res.json({ message: "User banned" }); }
     catch (err) { res.status(500).json({ error: "Error" }); }

@@ -1,11 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import './index.css';
 import App from './App';
-import './App.css'; // Eğer App.css dosyan varsa bunu ekle, yoksa bu satırı sil.
+import { LanguageProvider } from './LanguageContext'; // YENİ EKLENDİ
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <LanguageProvider> {/* YENİ EKLENDİ */}
+        <App />
+    </LanguageProvider> {/* YENİ EKLENDİ */}
   </React.StrictMode>
 );
