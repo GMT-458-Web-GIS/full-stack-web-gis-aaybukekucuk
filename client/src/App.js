@@ -4,7 +4,7 @@ import AddMovie from './AddMovie';
 import Login from './Login';
 import 'leaflet/dist/leaflet.css';
 import './App.css';
-import { useLanguage } from './LanguageContext'; // YENİ
+import { useLanguage } from './LanguageContext'; 
 
 function MapController({ centerCoordinates }) {
   const map = useMap();
@@ -17,7 +17,7 @@ function MapController({ centerCoordinates }) {
 }
 
 function App() {
-  const { t, lang, toggleLang } = useLanguage(); // YENİ
+  const { t, lang, toggleLang } = useLanguage(); 
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('map'); 
   const [selectedCountry, setSelectedCountry] = useState("World");
@@ -26,6 +26,9 @@ function App() {
   const [mapCenter, setMapCenter] = useState(null);
   const [countryList, setCountryList] = useState([]);
   const [favorites, setFavorites] = useState([]); 
+  
+  // YENİ: Rütbe Bilgi Penceresi Açık mı?
+  const [showRankModal, setShowRankModal] = useState(false);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
@@ -92,12 +95,28 @@ function App() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h1>CINEMAP</h1>
-            <p style={{ margin: 0, fontSize: '12px', color: '#666' }}>User: <span style={{ color: '#E50914', fontWeight: 'bold' }}>{user.username}</span> ({user.role})</p>
+            
+            {/* USER INFO & RANK */}
+            <div style={{fontSize: '13px', lineHeight: '1.4'}}>
+                <div style={{color: '#ccc'}}>Hello, <span style={{ color: 'white', fontWeight: 'bold' }}>{user.username}</span></div>
+                
+                <div style={{color: '#E50914', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px'}}>
+                    {user.rank || 'Ticket Holder 🎟️'} 
+                    {/* BİLGİ BUTONU */}
+                    <span 
+                        onClick={() => setShowRankModal(true)} 
+                        style={{cursor: 'pointer', fontSize: '14px', color: '#ccc'}} 
+                        title="Rank Info"
+                    >ⓘ</span>
+                </div>
+
+                <div style={{fontSize: '11px', color: '#888'}}>{user.points || 0} XP</div>
+            </div>
+
           </div>
           <button onClick={handleLogout} style={{ background: '#333', border: '1px solid #555', color: '#ccc', padding: '5px 8px', cursor: 'pointer', fontSize: '10px' }}>{t.logout}</button>
         </div>
         
-        {/* DİL DEĞİŞTİRME BUTONU */}
         <div style={{marginTop: '10px', textAlign: 'right'}}>
             <button onClick={toggleLang} style={{background: 'transparent', border: '1px solid #555', color: 'white', padding: '5px 10px', cursor: 'pointer', borderRadius: '15px', fontSize: '12px'}}>
                 {lang === 'en' ? '🇹🇷 Türkçe Yap' : '🇺🇸 Switch to English'}
@@ -124,7 +143,15 @@ function App() {
         )}
 
         {(user.role === 'Cinephile' || user.role === 'Admin') && activeTab !== 'admin' && (
-          <AddMovie currentUser={user} onMovieAdded={(coords) => { fetchMovies(); if(coords) setMapCenter([coords.lat, coords.lng]); setActiveTab('map'); }} />
+          <AddMovie 
+            currentUser={user} 
+            onMovieAdded={(coords, updatedUser) => { 
+                fetchMovies(); 
+                if(coords) setMapCenter([coords.lat, coords.lng]); 
+                setActiveTab('map');
+                if(updatedUser) { setUser(updatedUser); localStorage.setItem('user', JSON.stringify(updatedUser)); }
+            }} 
+          />
         )}
 
         <div style={{ marginTop: 'auto', borderTop: '1px solid #333', paddingTop: '1rem', paddingBottom: '20px' }}>
@@ -197,6 +224,43 @@ function App() {
             </div>
         )}
       </div>
+
+      {/* --- RANK INFO MODAL (YENİ EKLENDİ) --- */}
+      {showRankModal && (
+        <div style={{
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+            background: 'rgba(0,0,0,0.8)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999
+        }} onClick={() => setShowRankModal(false)}>
+            <div style={{
+                background: '#141414', padding: '30px', borderRadius: '10px', border: '1px solid #E50914',
+                maxWidth: '400px', width: '90%', textAlign: 'center', color: 'white'
+            }} onClick={(e) => e.stopPropagation()}>
+                
+                <h2 style={{color: '#E50914', fontFamily: 'Bebas Neue, sans-serif', fontSize: '2rem', margin: '0 0 20px 0'}}>{t.rankTitle}</h2>
+                <p style={{marginBottom: '20px', color: '#ccc'}}>{t.rankDesc}</p>
+                
+                <div style={{background: '#222', padding: '10px', borderRadius: '5px', marginBottom: '15px', display: 'flex', justifyContent: 'space-between'}}>
+                    <span>{t.rule1}</span>
+                    <span style={{color: '#28a745', fontWeight: 'bold'}}>{t.rule1Points}</span>
+                </div>
+
+                <div style={{textAlign: 'left', marginTop: '20px'}}>
+                    <h3 style={{fontSize: '14px', borderBottom: '1px solid #333', paddingBottom: '5px', color: '#888'}}>{t.ranks}</h3>
+                    <ul style={{listStyle: 'none', padding: 0, fontSize: '14px', lineHeight: '2'}}>
+                        <li style={{color: '#aaa'}}>{t.r1}</li>
+                        <li style={{color: '#fff'}}>{t.r2}</li>
+                        <li style={{color: '#f5c518'}}>{t.r3}</li>
+                        <li style={{color: '#E50914', fontWeight: 'bold'}}>{t.r4}</li>
+                    </ul>
+                </div>
+
+                <button onClick={() => setShowRankModal(false)} style={{marginTop: '20px', background: '#333', color: 'white', border: 'none', padding: '10px 20px', cursor: 'pointer', borderRadius: '4px'}}>
+                    {t.close}
+                </button>
+            </div>
+        </div>
+      )}
+
     </div>
   );
 }

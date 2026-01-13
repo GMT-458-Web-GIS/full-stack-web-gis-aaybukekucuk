@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './App.css'; 
-import { useLanguage } from './LanguageContext'; // YENİ
+import { useLanguage } from './LanguageContext'; 
 
 const AddMovie = ({ onMovieAdded, currentUser }) => {
-  const { t } = useLanguage(); // YENİ
+  const { t } = useLanguage(); 
   const [mode, setMode] = useState('search'); 
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -19,9 +19,7 @@ const AddMovie = ({ onMovieAdded, currentUser }) => {
   const [statusMsg, setStatusMsg] = useState(''); 
 
   useEffect(() => {
-    fetch('https://countriesnow.space/api/v0.1/countries')
-      .then(res => res.json())
-      .then(data => {
+    fetch('https://countriesnow.space/api/v0.1/countries').then(res => res.json()).then(data => {
         if (!data.error) {
             const sortedCountries = data.data.sort((a, b) => a.country.localeCompare(b.country));
             setAllLocations(sortedCountries);
@@ -29,8 +27,7 @@ const AddMovie = ({ onMovieAdded, currentUser }) => {
             const defaultCountry = sortedCountries.find(c => c.country === "Turkey") ? "Turkey" : sortedCountries[0].country;
             setSelectedCountry(defaultCountry);
         }
-      })
-      .catch(err => console.error("Location API Error:", err));
+      });
   }, []);
 
   useEffect(() => {
@@ -50,9 +47,7 @@ const AddMovie = ({ onMovieAdded, currentUser }) => {
     try {
       const response = await fetch(`https://www.omdbapi.com/?s=${encodeURIComponent(searchTerm)}&apikey=fff2b072`);
       const data = await response.json();
-      if (data.Response === "True") {
-        setSearchResults(data.Search); setStatusMsg('');
-      } else { setStatusMsg('Movie not found.'); }
+      if (data.Response === "True") { setSearchResults(data.Search); setStatusMsg(''); } else { setStatusMsg('Movie not found.'); }
     } catch (error) { console.error("Error:", error); }
     setLoading(false);
   };
@@ -98,8 +93,16 @@ const AddMovie = ({ onMovieAdded, currentUser }) => {
 
     try {
       const response = await fetch('http://localhost:5000/api/movies', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newMovie) });
+      
       if (response.ok) {
-        alert(t.movieAdded); onMovieAdded(coords); 
+        // --- BURASI DEĞİŞTİ: YENİ USER BİLGİSİNİ AL ---
+        const data = await response.json();
+        
+        alert(`+10 POINTS! Movie Added! Flying to ${finalCity}... ✈️`);
+        
+        // onMovieAdded'a artık hem koordinatı hem de yeni kullanıcı bilgisini yolluyoruz
+        onMovieAdded(coords, data.updatedUser); 
+        
         setMovieData(null); setSearchTerm(''); setStatusMsg(''); setManualData({title: '', director: '', year: '', genre: '', imdb: '', poster: ''}); setMode('search');
       }
     } catch (error) { alert("Server Error!"); }
@@ -120,13 +123,7 @@ const AddMovie = ({ onMovieAdded, currentUser }) => {
                 <input type="text" placeholder={t.searchPlaceholder} value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleSearch()} style={{ flex: 1, padding: '10px', background: '#333', border: '1px solid #444', color: 'white' }} />
                 <button onClick={handleSearch} style={{ background: '#E50914', color: 'white', border: 'none', padding: '0 15px', cursor: 'pointer' }}>{loading ? '...' : t.searchBtn}</button>
             </div>
-            
-            {statusMsg === 'Movie not found.' && (
-                <div style={{marginBottom: '15px', color: '#ccc', fontSize: '12px'}}>
-                    {t.notFound} <span onClick={() => setMode('manual')} style={{color: '#E50914', cursor: 'pointer', textDecoration: 'underline'}}>{t.addManually}</span>
-                </div>
-            )}
-
+            {statusMsg === 'Movie not found.' && (<div style={{marginBottom: '15px', color: '#ccc', fontSize: '12px'}}>{t.notFound} <span onClick={() => setMode('manual')} style={{color: '#E50914', cursor: 'pointer', textDecoration: 'underline'}}>{t.addManually}</span></div>)}
             {searchResults.length > 0 && (
                 <div style={{ maxHeight: '200px', overflowY: 'auto', background: '#222', borderRadius: '4px', marginBottom: '15px', border: '1px solid #444' }}>
                     {searchResults.map((movie) => (
@@ -174,9 +171,7 @@ const AddMovie = ({ onMovieAdded, currentUser }) => {
                 {cities.map(c => <option key={c} value={c}>{c}</option>)}
                 <option value="Other">{t.otherCity}</option>
             </select>
-            {selectedCity === "Other" && (
-              <input type="text" placeholder={t.typeCity} value={customCity} onChange={e => setCustomCity(e.target.value)} style={{ padding: '10px', background: '#444', color: 'white', border: '1px solid #E50914' }} />
-            )}
+            {selectedCity === "Other" && (<input type="text" placeholder={t.typeCity} value={customCity} onChange={e => setCustomCity(e.target.value)} style={{ padding: '10px', background: '#444', color: 'white', border: '1px solid #E50914' }} />)}
             <button onClick={handleSave} style={{ width: '100%', background: '#28a745', color: 'white', padding: '12px', border: 'none', cursor: 'pointer', fontWeight: 'bold', marginTop: '5px' }}>{t.saveFly}</button>
         </div>
       )}

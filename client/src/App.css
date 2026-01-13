@@ -141,28 +141,40 @@ select option {
   color: var(--primary-red) !important; /* Link renkleri */
 }
 
-/* --- LOGIN EKRANI TASARIMI (Netflix Style) --- */
+/* --- LOGIN EKRANI TASARIMI --- */
 .login-container {
   height: 100vh;
   width: 100vw;
-  background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://assets.nflxext.com/ffe/siteui/vlv3/f841d4c7-10e1-40af-bcae-07a3f8dc141a/f6d7434e-d6de-4185-a6d4-c77a2d08737b/TR-en-20220502-popsignuptwoweeks-perspective_alpha_website_medium.jpg');
+  
+  /* DEĞİŞİKLİK BURADA: 
+     rgba(0,0,0, 0.85) yaptık. 
+     Sayı 1'e ne kadar yaklaşırsa resim o kadar kararır/silikleşir.
+     Daha da silik olsun istersen 0.9 yapabilirsin.
+  */
+  background-image: linear-gradient(rgba(0,0,0, 0.85), rgba(0,0,0, 0.45)), url('./background.jpg');
+  
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .login-box {
-  background-color: rgba(0, 0, 0, 0.85);
+  /* Kutunun arka planını %80 siyah yaptık (0.8). 
+     Böylece arkadaki senin hazırladığın görsel kutunun içinden hafifçe görünür. 
+  */
+  background-color: rgba(0, 0, 0, 0.75); 
   padding: 60px;
-  border-radius: 5px;
+  border-radius: 8px; /* Köşeleri biraz daha yumuşattık */
   width: 100%;
   max-width: 450px;
   text-align: center;
   box-shadow: 0 0 20px rgba(0,0,0,0.5);
+  backdrop-filter: blur(5px); /* BU ÇOK HAVALI: Kutunun arkasını buzlu cam gibi yapar! */
+  border: 1px solid rgba(255, 255, 255, 0.1); /* İnce bir çerçeve */
 }
-
 .login-box input, .login-box select {
   width: 100%;
   padding: 16px;
