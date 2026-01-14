@@ -15,21 +15,26 @@ export const translations = {
     signInLink: "Sign in.",
     cinephile: "Cinephile",
     viewer: "Viewer",
-    
     logout: "LOGOUT",
     
-    // --- EMOJİSİZ, SADE SEKMELER ---
     mapTab: "MAP",
     listTab: "LIST",
-    watchlistTab: "WATCHLIST ★", // Sadece burada yıldız var
+    watchlistTab: "WATCHLIST ★",
     usersTab: "USERS",
     
-    projMode: "LENS MODE",
+    projMode: "LENS MODE:",        
     locMode: "🎬 FILM SETS",       
     buzzMode: "🔥 HOTSPOTS",       
     
+    nearbyBtn: "📍 ON LOCATION MODE",
+    nearbyActive: "Scanning regional area (1000km)...",
+    locating: "Triangulating position...",
+    gpsDenied: "GPS Access Denied.",
+    noMoviesNearby: "No film sets found in this region.",
+
     dailyPick: "MOVIE OF THE DAY",
     dailyDesc: "Don't know what to watch?",
+    feedTitle: "🔴 LIVE ACTIVITY",
 
     filterCountry: "Country:",
     filterGenre: "Genre:",
@@ -55,11 +60,21 @@ export const translations = {
     mGenre: "Genre",
     mPoster: "Poster URL",
 
+    // --- YENİ: MEDYA EKLEME ---
+    addEvidenceBtn: "📸 ADD SCENE",
+    evidenceModalTitle: "CONTRIBUTE TO ARCHIVE",
+    evidencePlaceholder: "Paste Photo or Video URL here...",
+    evidenceType: "Type:",
+    photo: "Photo",
+    video: "Video",
+    submitEvidence: "SUBMIT EVIDENCE",
+    evidenceAdded: "Thanks for your contribution!",
+
     movieList: "MOVIE LIST",
     myWatchlist: "MY WATCHLIST",
     emptyWatchlist: "Your watchlist is empty.",
-    edit: "EDIT",
-    del: "DEL",
+    edit: "Edit",
+    del: "Delete",
     addedBy: "Added by:",
     
     adminPanel: "USER MANAGEMENT",
@@ -71,7 +86,6 @@ export const translations = {
     loginFirst: "Please Login.",
     fillAll: "Fill required fields.",
     movieAdded: "Added!",
-
     rankTitle: "RANK UP",
     rankDesc: "Earn XP by contributing!",
     rule1: "Add Movie",
@@ -100,21 +114,26 @@ export const translations = {
     signInLink: "Giriş Yap.",
     cinephile: "Sinefil",
     viewer: "İzleyici",
-    
     logout: "ÇIKIŞ",
     
-    // --- EMOJİSİZ, SADE SEKMELER ---
     mapTab: "HARİTA",
     listTab: "LİSTE",
-    watchlistTab: "İZLEME LİSTESİ ★", // Sadece burada yıldız var
+    watchlistTab: "İZLEME LİSTESİ ★",
     usersTab: "KULLANICILAR",
     
     projMode: "LENS MODU",
     locMode: "🎬 FİLM SETLERİ",
     buzzMode: "🔥 SICAK BÖLGELER",
 
+    nearbyBtn: "📍 YERİNDE İZLE (KONUMUM)",
+    nearbyActive: "Bölgesel tarama yapılıyor (1000km)...",
+    locating: "Konum saptanıyor...",
+    gpsDenied: "Konum izni reddedildi.",
+    noMoviesNearby: "Bu bölgede (1000km) set bulunamadı.",
+
     dailyPick: "GÜNÜN FİLMİ",
     dailyDesc: "Ne izlesem diye düşünme!",
+    feedTitle: "🔴 CANLI AKIŞ",
 
     filterCountry: "Ülke:",
     filterGenre: "Tür:",
@@ -140,16 +159,25 @@ export const translations = {
     mGenre: "Tür",
     mPoster: "Poster Linki",
 
+    // --- YENİ: MEDYA EKLEME ---
+    addEvidenceBtn: "📸 SAHNE EKLE",
+    evidenceModalTitle: "ARŞİVE KATKIDA BULUN",
+    evidencePlaceholder: "Fotoğraf veya Video Linki yapıştır...",
+    evidenceType: "Tip:",
+    photo: "Fotoğraf",
+    video: "Video",
+    submitEvidence: "KANITI GÖNDER",
+    evidenceAdded: "Katkınız için teşekkürler!",
+
     movieList: "FİLM LİSTESİ",
     myWatchlist: "İZLEME LİSTEM",
     emptyWatchlist: "Listeniz boş.",
-    edit: "DÜZENLE",
-    del: "SİL",
+    edit: "Düzenle",
+    del: "Sil",
     addedBy: "Ekleyen:",
     
     adminPanel: "KULLANICI YÖNETİMİ",
     ban: "YASAKLA",
-    
     confirmDel: "Emin misiniz?",
     movieDeleted: "Silindi.",
     movieUpdated: "Güncellendi!",
@@ -157,7 +185,6 @@ export const translations = {
     loginFirst: "Giriş yapın.",
     fillAll: "Alanları doldurun.",
     movieAdded: "Eklendi!",
-
     rankTitle: "RÜTBE SİSTEMİ",
     rankDesc: "Katkıda bulun, XP kazan!",
     rule1: "Film Ekle",

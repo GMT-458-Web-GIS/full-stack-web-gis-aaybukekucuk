@@ -11,12 +11,22 @@ import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import './App.css';
 import { useLanguage } from './LanguageContext'; 
 
-// İKON TANIMI
+// --- İKON TANIMLARI ---
+
+// 1. Filmler için Kırmızı Nokta (CSS)
 const recDotIcon = new L.DivIcon({
   className: 'custom-rec-marker',
   iconSize: [16, 16],
   iconAnchor: [8, 8],
   popupAnchor: [0, -10]
+});
+
+// 2. Kullanıcı Konumu için Mavi Nokta (CSS)
+const userLocationIcon = new L.DivIcon({
+  className: 'custom-user-marker',
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+  popupAnchor: [0, -15]
 });
 
 // GÜNÜN FİLMİ LİSTESİ
@@ -25,19 +35,33 @@ const CULT_CLASSICS = [
     { Title: "Pulp Fiction", Year: "1994", Director: "Quentin Tarantino", Poster: "https://m.media-amazon.com/images/M/MV5BNGNhMDIzZTUtNTBlZi00MTRlLWFjM2ItYzViMjE3YzI5MjljXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_SX300.jpg" },
     { Title: "Fight Club", Year: "1999", Director: "David Fincher", Poster: "https://m.media-amazon.com/images/M/MV5BNDIzNDU0YzEtYzE5Ni00ZjlkLTk5ZjgtNjM3NWE4YzA3Nzk3XkEyXkFqcGdeQXVyMjUzOTY1NTc@._V1_SX300.jpg" },
     { Title: "Inception", Year: "2010", Director: "Christopher Nolan", Poster: "https://m.media-amazon.com/images/M/MV5BMjAxMzY3NjcxNF5BMl5BanBnXkFtZTcwNTI5OTM0Mw@@._V1_SX300.jpg" },
-    { Title: "The Matrix", Year: "1999", Director: "Lana Wachowski", Poster: "https://m.media-amazon.com/images/M/MV5BNzQzOTk3OTAtNDQ0Zi00ZTVkLWI0MTEtMDllZjNkYzNjNTc4L2ltYWdlXkEyXkFqcGdeQXVyNjU0OTQ0OTY@._V1_SX300.jpg" },
-    { Title: "Goodfellas", Year: "1990", Director: "Martin Scorsese", Poster: "https://m.media-amazon.com/images/M/MV5BY2NkZjEzMDgtN2RjYy00YzM1LWI4ZmQtMjIwYjFjNmI3ZGEwXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_SX300.jpg" },
     { Title: "Interstellar", Year: "2014", Director: "Christopher Nolan", Poster: "https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS00OGEyLWFmMjktY2FiMmZkNWIyODZiXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_SX300.jpg" },
-    { Title: "Parasite", Year: "2019", Director: "Bong Joon Ho", Poster: "https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTItODQ2ZC00NTY5LWE0ZDYtZTI3MjcwN2Q5NTVkXkEyXkFqcGdeQXVyODk4OTc3MTY@._V1_SX300.jpg" },
-    { Title: "Spirited Away", Year: "2001", Director: "Hayao Miyazaki", Poster: "https://m.media-amazon.com/images/M/MV5BMjlmZmI5MDctNDE2YS00YWE0LWE5ZWItZDBhYWQ0NTcxNWRhXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_SX300.jpg" },
-    { Title: "The Dark Knight", Year: "2008", Director: "Christopher Nolan", Poster: "https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTcwODAyMTk2Mw@@._V1_SX300.jpg" }
+    { Title: "Parasite", Year: "2019", Director: "Bong Joon Ho", Poster: "https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTItODQ2ZC00NTY5LWE0ZDYtZTI3MjcwN2Q5NTVkXkEyXkFqcGdeQXVyODk4OTc3MTY@._V1_SX300.jpg" }
 ];
+
+// ACTIVITY FEED İÇİN SAHTE VERİLER
+const MOCK_USERS = ["Cinephile_99", "MovieBuff", "Ali_K", "Sarah.J", "Mehmet Y.", "Elvin", "John D.", "Ayşe"];
+const ACTIONS_EN = ["reviewed", "visited", "added media to", "rated ★5"];
+const ACTIONS_TR = ["inceledi", "ziyaret etti", "medya ekledi", "puanladı ★5"];
+
+// HAVERSINE MESAFE FORMÜLÜ
+const haversineDistance = (coords1, coords2) => {
+  const toRad = (x) => (x * Math.PI) / 180;
+  const R = 6371; 
+  const dLat = toRad(coords2.lat - coords1.lat);
+  const dLon = toRad(coords2.lng - coords1.lng);
+  const lat1 = toRad(coords1.lat);
+  const lat2 = toRad(coords2.lat);
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1) * Math.cos(lat2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; 
+};
 
 function MapController({ centerCoordinates }) {
   const map = useMap();
   useEffect(() => {
     if (centerCoordinates) {
-      map.flyTo(centerCoordinates, 10, { duration: 2 });
+      map.flyTo(centerCoordinates, 12, { duration: 2 });
     }
   }, [centerCoordinates, map]);
   return null;
@@ -57,6 +81,18 @@ function App() {
   const [favorites, setFavorites] = useState([]); 
   const [showRankModal, setShowRankModal] = useState(false);
   const [dailyMovie, setDailyMovie] = useState(null);
+  
+  // Konum & Radar State'leri
+  const [userLocation, setUserLocation] = useState(null);
+  const [isNearbyActive, setIsNearbyActive] = useState(false);
+  const [radarStatus, setRadarStatus] = useState('');
+  
+  // Feed & Media Modal State'leri
+  const [feed, setFeed] = useState([]);
+  const [showMediaModal, setShowMediaModal] = useState(false);
+  const [selectedMovieForMedia, setSelectedMovieForMedia] = useState(null);
+  const [mediaType, setMediaType] = useState('image'); 
+  const [mediaUrl, setMediaUrl] = useState('');
 
   const genreList = useMemo(() => {
     if (!movies || movies.length === 0) return [];
@@ -82,6 +118,84 @@ function App() {
   const fetchCountries = () => fetch('https://countriesnow.space/api/v0.1/countries').then(res=>res.json()).then(data=>{if(!data.error) setCountryList(data.data.map(d=>d.country).sort())});
   const fetchUsers = () => fetch('http://localhost:5000/api/users').then(res=>res.json()).then(data=>setUsersList(data));
   const fetchFavorites = (userId) => fetch(`http://localhost:5000/api/users/${userId}/favorites`).then(res=>res.json()).then(data=>setFavorites(data));
+
+  // --- MEDYA (KANIT) EKLEME ---
+  const handleAddMedia = async (e) => {
+      e.preventDefault();
+      if(!mediaUrl) return;
+
+      try {
+          const response = await fetch(`http://localhost:5000/api/movies/${selectedMovieForMedia._id}/media`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  type: mediaType,
+                  url: mediaUrl,
+                  addedBy: user.username
+              })
+          });
+
+          if(response.ok) {
+              alert(t.evidenceAdded);
+              setMediaUrl('');
+              setShowMediaModal(false);
+              fetchMovies(); 
+          } else {
+              alert("Error adding media. Make sure backend route exists.");
+          }
+      } catch (err) { console.error(err); }
+  };
+
+  // --- GERÇEKÇİ ETKİNLİK SİMÜLASYONU ---
+  useEffect(() => {
+    if (movies.length === 0) return;
+    const generateRealActivity = () => {
+        const randomMovie = movies[Math.floor(Math.random() * movies.length)];
+        const randomUser = MOCK_USERS[Math.floor(Math.random() * MOCK_USERS.length)];
+        const actions = lang === 'en' ? ACTIONS_EN : ACTIONS_TR;
+        const randomAction = actions[Math.floor(Math.random() * actions.length)];
+        return {
+            user: randomUser,
+            action: randomAction,
+            movie: randomMovie.title,
+            location: randomMovie.city,
+            coords: [randomMovie.coordinates.lat, randomMovie.coordinates.lng] 
+        };
+    };
+    if (feed.length === 0) {
+        setFeed([generateRealActivity(), generateRealActivity()]);
+    }
+    const interval = setInterval(() => {
+        setFeed(prev => [generateRealActivity(), ...prev].slice(0, 3)); 
+    }, 45000); 
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [movies, lang]);
+
+  // --- ON LOCATION (KONUM BULMA) ---
+  const handleFindNearby = () => {
+    if (isNearbyActive) {
+      setIsNearbyActive(false);
+      setRadarStatus('');
+      return;
+    }
+    setRadarStatus(t.locating);
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported");
+      setRadarStatus('');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
+        setUserLocation(coords);
+        setMapCenter([coords.lat, coords.lng]); 
+        setIsNearbyActive(true); 
+        setRadarStatus(t.nearbyActive);
+      },
+      (error) => { console.error(error); alert(t.gpsDenied); setRadarStatus(''); }
+    );
+  };
 
   const toggleFavorite = async (movieId, e) => {
       if(e) e.stopPropagation();
@@ -120,8 +234,15 @@ function App() {
   const handleLogout = () => { localStorage.removeItem('token'); localStorage.removeItem('user'); setUser(null); };
 
   let displayedMovies = movies;
+  if (isNearbyActive && userLocation) {
+      displayedMovies = displayedMovies.filter(movie => {
+          const dist = haversineDistance(userLocation, movie.coordinates);
+          return dist <= 1000; 
+      });
+  } else {
+      if (selectedCountry !== "World") displayedMovies = displayedMovies.filter(movie => movie.country === selectedCountry);
+  }
   if (activeTab === 'watchlist') displayedMovies = displayedMovies.filter(movie => favorites.includes(movie._id));
-  if (selectedCountry !== "World") displayedMovies = displayedMovies.filter(movie => movie.country === selectedCountry);
   if (selectedGenre !== "All") displayedMovies = displayedMovies.filter(movie => movie.genre && movie.genre.includes(selectedGenre));
 
   if (!user) return <Login onLoginSuccess={(userData) => { setUser(userData); setFavorites(userData.favorites || []); }} />;
@@ -150,7 +271,6 @@ function App() {
             </button>
         </div>
 
-        {/* --- YENİLENEN NAVİGASYON (FLEXBOX İLE SIĞDIRILDI) --- */}
         <div className="nav-row">
           <button onClick={() => setActiveTab('map')} className={`nav-btn ${activeTab === 'map' ? 'active' : ''}`}>{t.mapTab}</button>
           <button onClick={() => setActiveTab('list')} className={`nav-btn ${activeTab === 'list' ? 'active' : ''}`}>{t.listTab}</button>
@@ -163,7 +283,6 @@ function App() {
         {activeTab !== 'admin' && activeTab !== 'watchlist' && (
             <div className="filter-section">
                 
-                {/* --- LENS MODE KUTUSU --- */}
                 {activeTab === 'map' && (
                   <div className="control-panel">
                       <label className="panel-label">{t.projMode}</label>
@@ -178,8 +297,7 @@ function App() {
                   </div>
                 )}
                 
-                {/* --- GÜNÜN FİLMİ KARTI --- */}
-                {dailyMovie && activeTab !== 'admin' && (
+                {dailyMovie && activeTab !== 'admin' && !isNearbyActive && (
                     <div className="daily-card">
                         <img src={dailyMovie.Poster} alt="Daily" className="daily-poster" />
                         <div className="daily-info">
@@ -190,9 +308,28 @@ function App() {
                     </div>
                 )}
 
+                <div style={{marginBottom: '20px'}}>
+                    <button 
+                        onClick={handleFindNearby}
+                        style={{
+                            width: '100%', padding: '12px', 
+                            background: isNearbyActive ? 'rgba(229, 9, 20, 0.1)' : '#1a1a1a', 
+                            color: isNearbyActive ? '#E50914' : 'white', 
+                            border: isNearbyActive ? '1px solid #E50914' : '1px solid #444', 
+                            borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                            transition: 'all 0.3s', fontSize: '11px', letterSpacing: '0.5px'
+                        }}
+                    >
+                        {isNearbyActive ? `✖ ${t.close}` : t.nearbyBtn}
+                    </button>
+                    {radarStatus && <div style={{fontSize: '10px', color: '#E50914', marginTop: '8px', textAlign: 'center', fontStyle:'italic', animation: 'fadeIn 0.5s'}}>{radarStatus}</div>}
+                    {isNearbyActive && displayedMovies.length === 0 && <div style={{fontSize: '10px', color: '#888', marginTop: '5px', textAlign: 'center'}}>{t.noMoviesNearby}</div>}
+                </div>
+
                 <div style={{marginBottom: '10px'}}>
                     <label className="filter-label">{t.filterCountry}</label>
-                    <select onChange={(e) => setSelectedCountry(e.target.value)} value={selectedCountry}>
+                    <select onChange={(e) => setSelectedCountry(e.target.value)} value={selectedCountry} disabled={isNearbyActive} style={{opacity: isNearbyActive ? 0.5 : 1}}>
                         <option value="World">{t.allWorld}</option>
                         {countryList.map(country => <option key={country} value={country}>{country}</option>)}
                     </select>
@@ -224,44 +361,109 @@ function App() {
         </div>
       </div>
 
-      <div className="map-area" style={{ background: '#141414', overflowY: 'auto' }}>
+      <div className="map-area" style={{ background: '#141414', overflowY: 'auto', position: 'relative' }}>
         {activeTab === 'map' && (
-          <MapContainer center={[39.93, 32.85]} zoom={4} style={{ height: "100vh", width: "100%" }}>
-            <MapController centerCoordinates={mapCenter} />
-            <TileLayer attribution='&copy; CARTO' url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
-            
-            {mapLayer === 'heatmap' && (<HeatmapLayer points={displayedMovies} />)}
+          <>
+            <MapContainer center={[39.93, 32.85]} zoom={4} style={{ height: "100vh", width: "100%" }}>
+                <MapController centerCoordinates={mapCenter} />
+                <TileLayer attribution='&copy; CARTO' url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
+                
+                {isNearbyActive && userLocation && (<Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}><Popup>📍 YOU ARE HERE</Popup></Marker>)}
+                {mapLayer === 'heatmap' && (<HeatmapLayer points={displayedMovies} />)}
+                {mapLayer === 'cluster' && (
+                    <MarkerClusterGroup chunkedLoading>
+                        {displayedMovies.map((movie) => (
+                        <Marker key={movie._id} position={[movie.coordinates.lat, movie.coordinates.lng]} icon={recDotIcon}>
+                            {/* --- POPUP (YENİLENMİŞ YÜKSEK KONTRAST) --- */}
+                            <Popup>
+                            <div style={{ minWidth: "240px", maxHeight: "300px", overflowY: "auto" }}>
+                                {/* Başlık - SAĞDAN PADDING EKLENDİ (X İLE ÇAKIŞMAZ) */}
+                                <h3 style={{ 
+                                    margin: "0 0 12px 0", 
+                                    color: "#E50914", 
+                                    borderBottom: "1px solid #444", 
+                                    paddingBottom: "8px", 
+                                    display:'flex', 
+                                    justifyContent:'space-between', 
+                                    alignItems:'center', 
+                                    fontSize: "16px", 
+                                    fontFamily: "Arial, sans-serif",
+                                    paddingRight: "25px" // BURASI X BUTONUNU KURTARIR
+                                }}>
+                                    {movie.title}
+                                    <span onClick={(e) => toggleFavorite(movie._id, e)} style={{cursor: 'pointer', fontSize: '1.2rem', color: favorites.includes(movie._id) ? '#E50914' : '#555'}}>
+                                        {favorites.includes(movie._id) ? '★' : '☆'}
+                                    </span>
+                                </h3>
 
-            {mapLayer === 'cluster' && (
-                <MarkerClusterGroup chunkedLoading>
-                    {displayedMovies.map((movie) => (
-                    <Marker key={movie._id} position={[movie.coordinates.lat, movie.coordinates.lng]} icon={recDotIcon}>
-                        <Popup>
-                        <div style={{ minWidth: "220px" }}>
-                            <h3 style={{ margin: "0 0 10px 0", color: "#E50914", borderBottom: "1px solid #333", paddingBottom: "5px", display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                                {movie.title}
-                                <span onClick={(e) => toggleFavorite(movie._id, e)} style={{cursor: 'pointer', fontSize: '1.4rem', lineHeight: '1'}}>{favorites.includes(movie._id) ? '⭐' : '☆'}</span>
-                            </h3>
-                            <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                            {movie.poster && <img src={movie.poster} alt="Poster" style={{ width: '60px', height: '90px', objectFit: 'cover', borderRadius: '4px' }} />}
-                            <div style={{ fontSize: '12px', color: '#333', lineHeight: '1.4' }}>
-                                <div><strong>Dir:</strong> {movie.director}</div><div><strong>Year:</strong> {movie.year}</div><div><strong>Genre:</strong> {movie.genre}</div><div style={{ color: '#E50914', fontWeight: 'bold', marginTop: '3px' }}>★ {movie.imdb}</div>
+                                {/* Detaylar */}
+                                <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+                                    {movie.poster && <img src={movie.poster} alt="Poster" style={{ width: '70px', height: '105px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #333' }} />}
+                                    <div style={{ fontSize: '13px', lineHeight: '1.6', flex: 1 }}>
+                                        <div style={{color: '#ccc'}}><span style={{color: '#666', fontWeight:'bold', marginRight:'5px'}}>Dir:</span> {movie.director}</div>
+                                        <div style={{color: '#ccc'}}><span style={{color: '#666', fontWeight:'bold', marginRight:'5px'}}>Year:</span> {movie.year}</div>
+                                        <div style={{color: '#ccc'}}><span style={{color: '#666', fontWeight:'bold', marginRight:'5px'}}>Genre:</span> {movie.genre}</div>
+                                        <div style={{ color: '#E50914', fontWeight: 'bold', marginTop: '6px', fontSize: '14px' }}>★ {movie.imdb}</div>
+                                    </div>
+                                </div>
+                                
+                                {/* Medya Galerisi */}
+                                {movie.media && movie.media.length > 0 && (
+                                    <div style={{marginBottom:'10px', borderTop:'1px solid #333', paddingTop:'8px'}}>
+                                        <strong style={{fontSize:'11px', color:'#888', display:'block', marginBottom:'5px', textTransform:'uppercase', letterSpacing:'0.5px'}}>SCENE ARCHIVE:</strong>
+                                        <div style={{display:'flex', gap:'5px', overflowX:'auto', paddingBottom:'5px'}}>
+                                            {movie.media.map((m, i) => (
+                                                <div key={i} style={{flexShrink:0, width:'80px'}}>
+                                                    {m.type === 'image' ? (
+                                                        <a href={m.url} target="_blank" rel="noreferrer"><img src={m.url} alt="Evidence" style={{width:'100%', height:'50px', objectFit:'cover', borderRadius:'3px', border:'1px solid #444'}} /></a>
+                                                    ) : (
+                                                        <a href={m.url} target="_blank" rel="noreferrer" style={{display:'block', width:'100%', height:'50px', background:'#222', color:'#fff', fontSize:'20px', textAlign:'center', lineHeight:'50px', borderRadius:'3px', border:'1px solid #444'}}>▶</a>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Medya Ekle Butonu */}
+                                {(user.role === 'Cinephile' || user.role === 'Admin') && (
+                                    <button 
+                                        onClick={() => { setSelectedMovieForMedia(movie); setShowMediaModal(true); }}
+                                        style={{width:'100%', background:'transparent', color:'#ccc', border:'1px solid #555', padding:'6px', fontSize:'11px', cursor:'pointer', marginTop:'5px', borderRadius: '3px', transition: 'all 0.2s'}}
+                                        onMouseOver={(e) => {e.target.style.borderColor = '#E50914'; e.target.style.color = '#fff'}}
+                                        onMouseOut={(e) => {e.target.style.borderColor = '#555'; e.target.style.color = '#ccc'}}
+                                    >
+                                        {t.addEvidenceBtn}
+                                    </button>
+                                )}
+
+                                <div style={{marginTop: '8px', fontSize: '10px', color: '#555', textAlign:'right', fontStyle:'italic'}}>
+                                    {t.addedBy} <span style={{color: '#888'}}>{movie.addedBy}</span>
+                                </div>
                             </div>
-                            </div>
-                            <div style={{marginTop: '5px', fontSize: '10px', color: '#666', borderTop: '1px solid #ccc', paddingTop: '5px'}}>{t.addedBy} <span style={{color: '#000'}}>{movie.addedBy}</span></div>
-                        </div>
-                        </Popup>
-                    </Marker>
-                    ))}
-                </MarkerClusterGroup>
-            )}
-          </MapContainer>
+                            </Popup>
+                        </Marker>
+                        ))}
+                    </MarkerClusterGroup>
+                )}
+            </MapContainer>
+
+            {/* Activity Feed */}
+            <div className="activity-feed-container">
+                <div className="feed-header"><div className="blink-dot"></div>{t.feedTitle}</div>
+                {feed.map((item, index) => (
+                    <div key={index} className="feed-item" onClick={() => setMapCenter([item.coords[0], item.coords[1]])}>
+                        <span className="feed-user">{item.user}</span> {item.action} <span className="feed-movie">{item.movie}</span> <span className="feed-loc">({item.location})</span>
+                    </div>
+                ))}
+            </div>
+          </>
         )}
 
         {(activeTab === 'list' || activeTab === 'watchlist') && (
           <div style={{ padding: '40px', color: 'white' }}>
             <h2 style={{ borderBottom: '1px solid #333', paddingBottom: '20px' }}>
-                {activeTab === 'watchlist' ? t.myWatchlist : `${t.movieList} (${selectedCountry}${selectedGenre !== 'All' ? ` - ${selectedGenre}` : ''})`}
+                {activeTab === 'watchlist' ? t.myWatchlist : `${t.movieList} (${isNearbyActive ? 'On Location (1000km)' : selectedCountry})`}
             </h2>
             {activeTab === 'watchlist' && displayedMovies.length === 0 && <p style={{color: '#666', fontStyle: 'italic'}}>{t.emptyWatchlist}</p>}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px' }}>
@@ -300,6 +502,37 @@ function App() {
         )}
       </div>
 
+      {/* --- MEDIA ADD MODAL --- */}
+      {showMediaModal && (
+            <div style={{position:'fixed', top:0, left:0, width:'100vw', height:'100vh', background:'rgba(0,0,0,0.8)', display:'flex', justifyContent:'center', alignItems:'center', zIndex:9999}}>
+                <div style={{background:'#141414', padding:'20px', borderRadius:'8px', width:'300px', border:'1px solid #E50914', color:'white'}}>
+                    <h3 style={{color:'#E50914', margin:'0 0 15px 0', fontSize:'16px'}}>{t.evidenceModalTitle}</h3>
+                    <form onSubmit={handleAddMedia}>
+                        <div style={{marginBottom:'10px'}}>
+                            <label style={{display:'block', fontSize:'12px', color:'#aaa', marginBottom:'5px'}}>{t.evidenceType}</label>
+                            <select value={mediaType} onChange={e=>setMediaType(e.target.value)} style={{width:'100%', padding:'8px', background:'#222', color:'white', border:'1px solid #444'}}>
+                                <option value="image">{t.photo}</option>
+                                <option value="video">{t.video}</option>
+                            </select>
+                        </div>
+                        <input 
+                            type="text" 
+                            placeholder={t.evidencePlaceholder} 
+                            value={mediaUrl} 
+                            onChange={e=>setMediaUrl(e.target.value)}
+                            required
+                            style={{width:'100%', padding:'8px', background:'#222', color:'white', border:'1px solid #444', marginBottom:'15px'}}
+                        />
+                        <div style={{display:'flex', gap:'10px'}}>
+                            <button type="submit" style={{flex:1, background:'#E50914', color:'white', border:'none', padding:'10px', cursor:'pointer', fontWeight:'bold'}}>{t.submitEvidence}</button>
+                            <button type="button" onClick={() => setShowMediaModal(false)} style={{flex:1, background:'#333', color:'white', border:'none', padding:'10px', cursor:'pointer'}}>{t.close}</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        )}
+
+      {/* --- RANK MODAL --- */}
       {showRankModal && (
         <div style={{
             position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',

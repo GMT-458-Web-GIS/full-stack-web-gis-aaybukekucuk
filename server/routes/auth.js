@@ -45,3 +45,29 @@ router.post('/login', async (req, res) => {
 });
 
 module.exports = router;
+
+// --- YENİ: Filme Medya (Kanıt) Ekleme Rotası ---
+router.post('/:id/media', async (req, res) => {
+  try {
+    const { type, url, addedBy } = req.body;
+    
+    // 1. Filmi ID'sine göre bul
+    const movie = await Movie.findById(req.params.id);
+    if (!movie) return res.status(404).json({ message: "Movie not found" });
+
+    // 2. Yeni medyayı listeye ekle (push)
+    movie.media.push({
+      type,
+      url,
+      addedBy
+    });
+
+    // 3. Kaydet
+    const updatedMovie = await movie.save();
+    
+    res.status(200).json(updatedMovie);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
