@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, Polygon } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polygon, WMSTileLayer } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import HeatmapLayer from './HeatmapLayer';
 import AddMovie from './AddMovie';
@@ -13,7 +13,6 @@ import { useLanguage } from './LanguageContext';
 
 // --- İKON TANIMLARI ---
 
-// 1. Filmler için Kırmızı Nokta (CSS)
 const recDotIcon = new L.DivIcon({
   className: 'custom-rec-marker',
   iconSize: [16, 16],
@@ -21,7 +20,6 @@ const recDotIcon = new L.DivIcon({
   popupAnchor: [0, -10]
 });
 
-// 2. Kullanıcı Konumu için Mavi Nokta (CSS)
 const userLocationIcon = new L.DivIcon({
   className: 'custom-user-marker',
   iconSize: [20, 20],
@@ -29,7 +27,7 @@ const userLocationIcon = new L.DivIcon({
   popupAnchor: [0, -15]
 });
 
-// --- YENİLENMİŞ FİLM ENDÜSTRİ MERKEZLERİ ---
+// --- FİLM ENDÜSTRİ MERKEZLERİ ---
 const FILM_PRODUCTION_CENTERS = [
     {
         id: "hollywood",
@@ -188,8 +186,10 @@ function App() {
   const [mediaType, setMediaType] = useState('image'); 
   const [mediaUrl, setMediaUrl] = useState('');
 
-  // --- POLİGON GÖSTERME DURUMU ---
+  // --- POLİGON VE WMS DURUMU ---
   const [showPolygons, setShowPolygons] = useState(false); 
+  // GeoServer katmanını açıp kapamak için state
+  const [showGeoServerLayer, setShowGeoServerLayer] = useState(false);
 
   const genreList = useMemo(() => {
     if (!movies || movies.length === 0) return [];
@@ -376,11 +376,26 @@ function App() {
                                 borderColor: '#E50914', 
                                 color: showPolygons ? 'white' : '#E50914', 
                                 background: showPolygons ? '#E50914' : 'transparent',
-                                flex: '1 0 100%',
+                                flex: '1 0 45%',
                                 marginTop: '5px'
                             }}
                           >
-                            {showPolygons ? 'HIDE CENTERS 🎬' : 'FILM PRODUCTION CENTERS 🎥'}
+                            {showPolygons ? 'HIDE CENTERS' : 'CENTERS 🎥'}
+                          </button>
+
+                          {/* GEOSERVER BUTONU */}
+                          <button 
+                            onClick={() => setShowGeoServerLayer(!showGeoServerLayer)} 
+                            className={`mode-btn ${showGeoServerLayer ? 'active' : ''}`}
+                            style={{
+                                borderColor: '#00ccff', 
+                                color: showGeoServerLayer ? 'black' : '#00ccff', 
+                                background: showGeoServerLayer ? '#00ccff' : 'transparent',
+                                flex: '1 0 45%',
+                                marginTop: '5px'
+                            }}
+                          >
+                            {showGeoServerLayer ? 'HIDE WMS' : 'GEOSERVER WMS'}
                           </button>
                       </div>
                   </div>
@@ -457,6 +472,20 @@ function App() {
                 <MapController centerCoordinates={mapCenter} />
                 <TileLayer attribution='&copy; CARTO' url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
                 
+                {/* GÜNCELLENMİŞ GEOSERVER KATMANI (B PLANI: ABD HARİTASI) */}
+                {showGeoServerLayer && (
+                  <WMSTileLayer
+                    url="http://localhost:8080/geoserver/wms"
+                    params={{
+                      layers: 'topp:states', // GARANTİ ÇALIŞAN ABD HARİTASI
+                      format: 'image/png',
+                      transparent: true,
+                      version: '1.1.0',
+                      tiled: true
+                    }}
+                  />
+                )}
+
                 {/* --- FILM ENDÜSTRİ BÖLGELERİ (GÖRÜNÜR POLİGONLAR) --- */}
                 {showPolygons && FILM_PRODUCTION_CENTERS.map((center) => (
                     <Polygon 
@@ -505,28 +534,28 @@ function App() {
                                 </div>
                                 {movie.media && movie.media.length > 0 && (
                                     <div style={{marginBottom:'10px', borderTop:'1px solid #333', paddingTop:'8px'}}>
-                                        <strong style={{fontSize:'11px', color:'#888', display:'block', marginBottom:'5px', textTransform:'uppercase', letterSpacing:'0.5px'}}>SCENE ARCHIVE:</strong>
-                                        <div style={{display:'flex', gap:'5px', overflowX:'auto', paddingBottom:'5px'}}>
-                                            {movie.media.map((m, i) => (
-                                                <div key={i} style={{flexShrink:0, width:'80px'}}>
-                                                    {m.type === 'image' ? (
-                                                        <a href={m.url} target="_blank" rel="noreferrer"><img src={m.url} alt="Evidence" style={{width:'100%', height:'50px', objectFit:'cover', borderRadius:'3px', border:'1px solid #444'}} /></a>
-                                                    ) : (
-                                                        <a href={m.url} target="_blank" rel="noreferrer" style={{display:'block', width:'100%', height:'50px', background:'#222', color:'#fff', fontSize:'20px', textAlign:'center', lineHeight:'50px', borderRadius:'3px', border:'1px solid #444'}}>▶</a>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
+                                            <strong style={{fontSize:'11px', color:'#888', display:'block', marginBottom:'5px', textTransform:'uppercase', letterSpacing:'0.5px'}}>SCENE ARCHIVE:</strong>
+                                            <div style={{display:'flex', gap:'5px', overflowX:'auto', paddingBottom:'5px'}}>
+                                                {movie.media.map((m, i) => (
+                                                    <div key={i} style={{flexShrink:0, width:'80px'}}>
+                                                        {m.type === 'image' ? (
+                                                            <a href={m.url} target="_blank" rel="noreferrer"><img src={m.url} alt="Evidence" style={{width:'100%', height:'50px', objectFit:'cover', borderRadius:'3px', border:'1px solid #444'}} /></a>
+                                                        ) : (
+                                                            <a href={m.url} target="_blank" rel="noreferrer" style={{display:'block', width:'100%', height:'50px', background:'#222', color:'#fff', fontSize:'20px', textAlign:'center', lineHeight:'50px', borderRadius:'3px', border:'1px solid #444'}}>▶</a>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
                                     </div>
                                 )}
                                 {(user.role === 'Cinephile' || user.role === 'Admin') && (
                                     <button 
-                                        onClick={() => { setSelectedMovieForMedia(movie); setShowMediaModal(true); }}
-                                        style={{width:'100%', background:'transparent', color:'#ccc', border:'1px solid #555', padding:'6px', fontSize:'11px', cursor:'pointer', marginTop:'5px', borderRadius: '3px', transition: 'all 0.2s'}}
-                                        onMouseOver={(e) => {e.target.style.borderColor = '#E50914'; e.target.style.color = '#fff'}}
-                                        onMouseOut={(e) => {e.target.style.borderColor = '#555'; e.target.style.color = '#ccc'}}
+                                            onClick={() => { setSelectedMovieForMedia(movie); setShowMediaModal(true); }}
+                                            style={{width:'100%', background:'transparent', color:'#ccc', border:'1px solid #555', padding:'6px', fontSize:'11px', cursor:'pointer', marginTop:'5px', borderRadius: '3px', transition: 'all 0.2s'}}
+                                            onMouseOver={(e) => {e.target.style.borderColor = '#E50914'; e.target.style.color = '#fff'}}
+                                            onMouseOut={(e) => {e.target.style.borderColor = '#555'; e.target.style.color = '#ccc'}}
                                     >
-                                        {t.addEvidenceBtn}
+                                            {t.addEvidenceBtn}
                                     </button>
                                 )}
                                 <div style={{marginTop: '8px', fontSize: '10px', color: '#555', textAlign:'right', fontStyle:'italic'}}>
