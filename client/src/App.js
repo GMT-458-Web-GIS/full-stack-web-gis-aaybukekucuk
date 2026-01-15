@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polygon } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import HeatmapLayer from './HeatmapLayer';
 import AddMovie from './AddMovie';
@@ -29,6 +29,101 @@ const userLocationIcon = new L.DivIcon({
   popupAnchor: [0, -15]
 });
 
+// --- YENİLENMİŞ FİLM ENDÜSTRİ MERKEZLERİ ---
+const FILM_PRODUCTION_CENTERS = [
+    {
+        id: "hollywood",
+        name: "HOLLYWOOD 🇺🇸",
+        desc: "Global mainstream cinema and major studio system.",
+        location: "California (Los Angeles)",
+        color: "#bf00ff",
+        coords: [
+            [34.1700, -118.4500],
+            [34.1700, -118.2000],
+            [34.0000, -118.2000],
+            [34.0000, -118.4500]
+        ]
+    },
+    {
+        id: "bollywood",
+        name: "BOLLYWOOD 🇮🇳",
+        desc: "Hindi-language film industry known for music and dance.",
+        location: "Mumbai and surrounding area",
+        color: "#ff9900",
+        coords: [
+            [19.2800, 72.7500],
+            [19.2800, 73.0000],
+            [18.9000, 73.0000],
+            [18.9000, 72.7500]
+        ]
+    },
+    {
+        id: "yesilcam",
+        name: "YEŞİLÇAM 🇹🇷",
+        desc: "The historical center of classic Turkish cinema.",
+        location: "Istanbul (Beyoğlu district)",
+        color: "#00ff00",
+        coords: [
+            [41.0600, 28.9400],
+            [41.0600, 29.0000],
+            [41.0000, 29.0000],
+            [41.0000, 28.9400]
+        ]
+    },
+    {
+        id: "nollywood",
+        name: "NOLLYWOOD 🇳🇬",
+        desc: "Africa’s largest film production industry.",
+        location: "Lagos metropolitan area",
+        color: "#ffff00",
+        coords: [
+            [6.7000, 3.2000],
+            [6.7000, 3.5000],
+            [6.4000, 3.5000],
+            [6.4000, 3.2000]
+        ]
+    },
+    {
+        id: "cinecitta",
+        name: "CINECITTÀ 🇮🇹",
+        desc: "One of Europe’s oldest and most influential film studio hubs.",
+        location: "Rome",
+        color: "#ff0000",
+        coords: [
+            [41.9500, 12.4000],
+            [41.9500, 12.6000],
+            [41.8000, 12.6000],
+            [41.8000, 12.4000]
+        ]
+    },
+    {
+        id: "chinawood",
+        name: "CHINAWOOD 🇨🇳",
+        desc: "Mainland China’s film production industry.",
+        location: "Beijing–Shanghai axis",
+        color: "#cc0000",
+        coords: [
+            [29.4000, 120.1000],
+            [29.4000, 120.4000],
+            [29.1000, 120.4000],
+            [29.1000, 120.1000]
+        ]
+    },
+    {
+        id: "hallyuwood",
+        name: "HALLYUWOOD 🇰🇷",
+        desc: "Center of the Korean Wave in film, television, and pop culture.",
+        location: "Seoul metropolitan area",
+        color: "#ff66cc",
+        coords: [
+            [37.7000, 126.8000],
+            [37.7000, 127.2000],
+            [37.4000, 127.2000],
+            [37.4000, 126.8000]
+        ]
+    }
+];
+
 // GÜNÜN FİLMİ LİSTESİ
 const CULT_CLASSICS = [
     { Title: "The Godfather", Year: "1972", Director: "Francis Ford Coppola", Poster: "https://m.media-amazon.com/images/M/MV5BM2MyNjYxNmUtYTAwNi00MTYxLWJmNWYtYzZlODY3ZTk3OTFlXkEyXkFqcGdeQXVyNzkwMjQ5NzM@._V1_SX300.jpg" },
@@ -39,12 +134,10 @@ const CULT_CLASSICS = [
     { Title: "Parasite", Year: "2019", Director: "Bong Joon Ho", Poster: "https://m.media-amazon.com/images/M/MV5BYWZjMjk3ZTItODQ2ZC00NTY5LWE0ZDYtZTI3MjcwN2Q5NTVkXkEyXkFqcGdeQXVyODk4OTc3MTY@._V1_SX300.jpg" }
 ];
 
-// ACTIVITY FEED İÇİN SAHTE VERİLER
-const MOCK_USERS = ["Cinephile_99", "MovieBuff", "Ali_K", "Sarah.J", "Mehmet Y.", "Elvin", "John D.", "Ayşe"];
+const MOCK_USERS = ["Cinephile_99", "MovieBuff", "Ali_K", "Sarah.J", "Mehmet Y.", "Aybüke", "John D.", "Gizem"];
 const ACTIONS_EN = ["reviewed", "visited", "added media to", "rated ★5"];
 const ACTIONS_TR = ["inceledi", "ziyaret etti", "medya ekledi", "puanladı ★5"];
 
-// HAVERSINE MESAFE FORMÜLÜ
 const haversineDistance = (coords1, coords2) => {
   const toRad = (x) => (x * Math.PI) / 180;
   const R = 6371; 
@@ -57,6 +150,7 @@ const haversineDistance = (coords1, coords2) => {
   return R * c; 
 };
 
+// Harita kontrolü (Zoom/Pan)
 function MapController({ centerCoordinates }) {
   const map = useMap();
   useEffect(() => {
@@ -82,17 +176,20 @@ function App() {
   const [showRankModal, setShowRankModal] = useState(false);
   const [dailyMovie, setDailyMovie] = useState(null);
   
-  // Konum & Radar State'leri
+  // Konum & Radar
   const [userLocation, setUserLocation] = useState(null);
   const [isNearbyActive, setIsNearbyActive] = useState(false);
   const [radarStatus, setRadarStatus] = useState('');
   
-  // Feed & Media Modal State'leri
+  // Feed & Media Modal
   const [feed, setFeed] = useState([]);
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [selectedMovieForMedia, setSelectedMovieForMedia] = useState(null);
   const [mediaType, setMediaType] = useState('image'); 
   const [mediaUrl, setMediaUrl] = useState('');
+
+  // --- POLİGON GÖSTERME DURUMU ---
+  const [showPolygons, setShowPolygons] = useState(false); 
 
   const genreList = useMemo(() => {
     if (!movies || movies.length === 0) return [];
@@ -119,34 +216,24 @@ function App() {
   const fetchUsers = () => fetch('http://localhost:5000/api/users').then(res=>res.json()).then(data=>setUsersList(data));
   const fetchFavorites = (userId) => fetch(`http://localhost:5000/api/users/${userId}/favorites`).then(res=>res.json()).then(data=>setFavorites(data));
 
-  // --- MEDYA (KANIT) EKLEME ---
   const handleAddMedia = async (e) => {
       e.preventDefault();
       if(!mediaUrl) return;
-
       try {
           const response = await fetch(`http://localhost:5000/api/movies/${selectedMovieForMedia._id}/media`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                  type: mediaType,
-                  url: mediaUrl,
-                  addedBy: user.username
-              })
+              body: JSON.stringify({ type: mediaType, url: mediaUrl, addedBy: user.username })
           });
-
           if(response.ok) {
               alert(t.evidenceAdded);
               setMediaUrl('');
               setShowMediaModal(false);
               fetchMovies(); 
-          } else {
-              alert("Error adding media. Make sure backend route exists.");
-          }
+          } else { alert("Error adding media. Check backend."); }
       } catch (err) { console.error(err); }
   };
 
-  // --- GERÇEKÇİ ETKİNLİK SİMÜLASYONU ---
   useEffect(() => {
     if (movies.length === 0) return;
     const generateRealActivity = () => {
@@ -162,29 +249,16 @@ function App() {
             coords: [randomMovie.coordinates.lat, randomMovie.coordinates.lng] 
         };
     };
-    if (feed.length === 0) {
-        setFeed([generateRealActivity(), generateRealActivity()]);
-    }
-    const interval = setInterval(() => {
-        setFeed(prev => [generateRealActivity(), ...prev].slice(0, 3)); 
-    }, 45000); 
+    if (feed.length === 0) { setFeed([generateRealActivity(), generateRealActivity()]); }
+    const interval = setInterval(() => { setFeed(prev => [generateRealActivity(), ...prev].slice(0, 3)); }, 45000); 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movies, lang]);
 
-  // --- ON LOCATION (KONUM BULMA) ---
   const handleFindNearby = () => {
-    if (isNearbyActive) {
-      setIsNearbyActive(false);
-      setRadarStatus('');
-      return;
-    }
+    if (isNearbyActive) { setIsNearbyActive(false); setRadarStatus(''); return; }
     setRadarStatus(t.locating);
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported");
-      setRadarStatus('');
-      return;
-    }
+    if (!navigator.geolocation) { alert("Geolocation not supported"); setRadarStatus(''); return; }
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
@@ -286,12 +360,27 @@ function App() {
                 {activeTab === 'map' && (
                   <div className="control-panel">
                       <label className="panel-label">{t.projMode}</label>
-                      <div style={{display: 'flex', gap: '8px'}}>
+                      <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
                           <button onClick={() => setMapLayer('cluster')} className={`mode-btn ${mapLayer === 'cluster' ? 'active' : ''}`}>
                             {t.locMode}
                           </button>
                           <button onClick={() => setMapLayer('heatmap')} className={`mode-btn ${mapLayer === 'heatmap' ? 'active' : ''}`}>
                             {t.buzzMode}
+                          </button>
+                          
+                          {/* --- FİLM MERKEZLERİ BUTONU --- */}
+                          <button 
+                            onClick={() => setShowPolygons(!showPolygons)} 
+                            className={`mode-btn ${showPolygons ? 'active' : ''}`}
+                            style={{
+                                borderColor: '#E50914', 
+                                color: showPolygons ? 'white' : '#E50914', 
+                                background: showPolygons ? '#E50914' : 'transparent',
+                                flex: '1 0 100%',
+                                marginTop: '5px'
+                            }}
+                          >
+                            {showPolygons ? 'HIDE CENTERS 🎬' : 'FILM PRODUCTION CENTERS 🎥'}
                           </button>
                       </div>
                   </div>
@@ -368,35 +457,43 @@ function App() {
                 <MapController centerCoordinates={mapCenter} />
                 <TileLayer attribution='&copy; CARTO' url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
                 
+                {/* --- FILM ENDÜSTRİ BÖLGELERİ (GÖRÜNÜR POLİGONLAR) --- */}
+                {showPolygons && FILM_PRODUCTION_CENTERS.map((center) => (
+                    <Polygon 
+                        key={center.id} 
+                        positions={center.coords} 
+                        pathOptions={{ 
+                            color: center.color, 
+                            fillColor: center.color, 
+                            fillOpacity: 0.4, // Daha görünür
+                            weight: 2,
+                            dashArray: null 
+                        }}
+                    >
+                        <Popup>
+                            <div style={{textAlign:'center'}}>
+                                <h3 style={{margin:'0 0 5px 0', color: center.color, textShadow:'1px 1px 0 #000'}}>{center.name}</h3>
+                                <div style={{fontSize:'12px', fontWeight:'bold', marginBottom:'3px'}}>{center.location}</div>
+                                <div style={{fontSize:'11px', color:'#333'}}>{center.desc}</div>
+                            </div>
+                        </Popup>
+                    </Polygon>
+                ))}
+
                 {isNearbyActive && userLocation && (<Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}><Popup>📍 YOU ARE HERE</Popup></Marker>)}
                 {mapLayer === 'heatmap' && (<HeatmapLayer points={displayedMovies} />)}
                 {mapLayer === 'cluster' && (
                     <MarkerClusterGroup chunkedLoading>
                         {displayedMovies.map((movie) => (
                         <Marker key={movie._id} position={[movie.coordinates.lat, movie.coordinates.lng]} icon={recDotIcon}>
-                            {/* --- POPUP (YENİLENMİŞ YÜKSEK KONTRAST) --- */}
                             <Popup>
                             <div style={{ minWidth: "240px", maxHeight: "300px", overflowY: "auto" }}>
-                                {/* Başlık - SAĞDAN PADDING EKLENDİ (X İLE ÇAKIŞMAZ) */}
-                                <h3 style={{ 
-                                    margin: "0 0 12px 0", 
-                                    color: "#E50914", 
-                                    borderBottom: "1px solid #444", 
-                                    paddingBottom: "8px", 
-                                    display:'flex', 
-                                    justifyContent:'space-between', 
-                                    alignItems:'center', 
-                                    fontSize: "16px", 
-                                    fontFamily: "Arial, sans-serif",
-                                    paddingRight: "25px" // BURASI X BUTONUNU KURTARIR
-                                }}>
+                                <h3 style={{ margin: "0 0 12px 0", color: "#E50914", borderBottom: "1px solid #444", paddingBottom: "8px", display:'flex', justifyContent:'space-between', alignItems:'center', fontSize: "16px", fontFamily: "Arial, sans-serif", paddingRight: "25px" }}>
                                     {movie.title}
-                                    <span onClick={(e) => toggleFavorite(movie._id, e)} style={{cursor: 'pointer', fontSize: '1.2rem', color: favorites.includes(movie._id) ? '#E50914' : '#555'}}>
+                                    <span onClick={(e) => toggleFavorite(movie._id, e)} style={{cursor: 'pointer', fontSize: '1.6rem', color: favorites.includes(movie._id) ? '#f5c518' : '#888', lineHeight: '1', marginLeft: '10px'}}>
                                         {favorites.includes(movie._id) ? '★' : '☆'}
                                     </span>
                                 </h3>
-
-                                {/* Detaylar */}
                                 <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
                                     {movie.poster && <img src={movie.poster} alt="Poster" style={{ width: '70px', height: '105px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #333' }} />}
                                     <div style={{ fontSize: '13px', lineHeight: '1.6', flex: 1 }}>
@@ -406,8 +503,6 @@ function App() {
                                         <div style={{ color: '#E50914', fontWeight: 'bold', marginTop: '6px', fontSize: '14px' }}>★ {movie.imdb}</div>
                                     </div>
                                 </div>
-                                
-                                {/* Medya Galerisi */}
                                 {movie.media && movie.media.length > 0 && (
                                     <div style={{marginBottom:'10px', borderTop:'1px solid #333', paddingTop:'8px'}}>
                                         <strong style={{fontSize:'11px', color:'#888', display:'block', marginBottom:'5px', textTransform:'uppercase', letterSpacing:'0.5px'}}>SCENE ARCHIVE:</strong>
@@ -424,8 +519,6 @@ function App() {
                                         </div>
                                     </div>
                                 )}
-
-                                {/* Medya Ekle Butonu */}
                                 {(user.role === 'Cinephile' || user.role === 'Admin') && (
                                     <button 
                                         onClick={() => { setSelectedMovieForMedia(movie); setShowMediaModal(true); }}
@@ -436,7 +529,6 @@ function App() {
                                         {t.addEvidenceBtn}
                                     </button>
                                 )}
-
                                 <div style={{marginTop: '8px', fontSize: '10px', color: '#555', textAlign:'right', fontStyle:'italic'}}>
                                     {t.addedBy} <span style={{color: '#888'}}>{movie.addedBy}</span>
                                 </div>
@@ -448,7 +540,6 @@ function App() {
                 )}
             </MapContainer>
 
-            {/* Activity Feed */}
             <div className="activity-feed-container">
                 <div className="feed-header"><div className="blink-dot"></div>{t.feedTitle}</div>
                 {feed.map((item, index) => (
@@ -502,7 +593,6 @@ function App() {
         )}
       </div>
 
-      {/* --- MEDIA ADD MODAL --- */}
       {showMediaModal && (
             <div style={{position:'fixed', top:0, left:0, width:'100vw', height:'100vh', background:'rgba(0,0,0,0.8)', display:'flex', justifyContent:'center', alignItems:'center', zIndex:9999}}>
                 <div style={{background:'#141414', padding:'20px', borderRadius:'8px', width:'300px', border:'1px solid #E50914', color:'white'}}>
@@ -515,14 +605,7 @@ function App() {
                                 <option value="video">{t.video}</option>
                             </select>
                         </div>
-                        <input 
-                            type="text" 
-                            placeholder={t.evidencePlaceholder} 
-                            value={mediaUrl} 
-                            onChange={e=>setMediaUrl(e.target.value)}
-                            required
-                            style={{width:'100%', padding:'8px', background:'#222', color:'white', border:'1px solid #444', marginBottom:'15px'}}
-                        />
+                        <input type="text" placeholder={t.evidencePlaceholder} value={mediaUrl} onChange={e=>setMediaUrl(e.target.value)} required style={{width:'100%', padding:'8px', background:'#222', color:'white', border:'1px solid #444', marginBottom:'15px'}} />
                         <div style={{display:'flex', gap:'10px'}}>
                             <button type="submit" style={{flex:1, background:'#E50914', color:'white', border:'none', padding:'10px', cursor:'pointer', fontWeight:'bold'}}>{t.submitEvidence}</button>
                             <button type="button" onClick={() => setShowMediaModal(false)} style={{flex:1, background:'#333', color:'white', border:'none', padding:'10px', cursor:'pointer'}}>{t.close}</button>
@@ -532,7 +615,6 @@ function App() {
             </div>
         )}
 
-      {/* --- RANK MODAL --- */}
       {showRankModal && (
         <div style={{
             position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',

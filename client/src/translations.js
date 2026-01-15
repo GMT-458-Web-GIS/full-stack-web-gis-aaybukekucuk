@@ -59,9 +59,21 @@ export const translations = {
     mYear: "Year *",
     mGenre: "Genre",
     mPoster: "Poster URL",
+    mScenePhoto: "Scene Photo URL (Optional)",
+    mSceneVideo: "Scene Video Link (YouTube etc.)",
 
-    // --- YENİ: MEDYA EKLEME ---
-    addEvidenceBtn: "📸 ADD SCENE",
+    // --- YENİ: ROTA OLUŞTURMA ---
+    createRouteTitle: "CREATE CINEMATIC ROUTE",
+    startDrawing: "✏️ START DRAWING",
+    finishDrawing: "💾 SAVE ROUTE",
+    cancelDrawing: "❌ CANCEL",
+    drawingInfo: "Click on the map to add route points.",
+    routeNamePlace: "Route Name (e.g. Godfather Tour)",
+    routeDescPlace: "Description...",
+    routeAdded: "Route Created Successfully!",
+
+    // --- MEDYA ---
+    addEvidenceBtn: "📸 ADD SCENE EVIDENCE",
     evidenceModalTitle: "CONTRIBUTE TO ARCHIVE",
     evidencePlaceholder: "Paste Photo or Video URL here...",
     evidenceType: "Type:",
@@ -73,10 +85,9 @@ export const translations = {
     movieList: "MOVIE LIST",
     myWatchlist: "MY WATCHLIST",
     emptyWatchlist: "Your watchlist is empty.",
-    edit: "Edit",
-    del: "Delete",
+    edit: "EDIT",
+    del: "DEL",
     addedBy: "Added by:",
-    
     adminPanel: "USER MANAGEMENT",
     ban: "BAN",
     confirmDel: "Are you sure?",
@@ -158,9 +169,21 @@ export const translations = {
     mYear: "Yıl *",
     mGenre: "Tür",
     mPoster: "Poster Linki",
+    mScenePhoto: "Sahne Fotoğrafı URL (İsteğe Bağlı)",
+    mSceneVideo: "Sahne Video Linki (YouTube vb.)",
 
-    // --- YENİ: MEDYA EKLEME ---
-    addEvidenceBtn: "📸 SAHNE EKLE",
+    // --- YENİ: ROTA OLUŞTURMA ---
+    createRouteTitle: "SİNEMATİK ROTA OLUŞTUR",
+    startDrawing: "✏️ ÇİZMEYE BAŞLA",
+    finishDrawing: "💾 ROTAYI KAYDET",
+    cancelDrawing: "❌ İPTAL",
+    drawingInfo: "Rota noktalarını eklemek için haritaya tıkla.",
+    routeNamePlace: "Rota Adı (Örn: Yeşilçam Turu)",
+    routeDescPlace: "Açıklama...",
+    routeAdded: "Rota Başarıyla Oluşturuldu!",
+
+    // --- MEDYA ---
+    addEvidenceBtn: "📸 SAHNE KANITI EKLE",
     evidenceModalTitle: "ARŞİVE KATKIDA BULUN",
     evidencePlaceholder: "Fotoğraf veya Video Linki yapıştır...",
     evidenceType: "Tip:",
@@ -172,10 +195,9 @@ export const translations = {
     movieList: "FİLM LİSTESİ",
     myWatchlist: "İZLEME LİSTEM",
     emptyWatchlist: "Listeniz boş.",
-    edit: "Düzenle",
-    del: "Sil",
+    edit: "DÜZENLE",
+    del: "SİL",
     addedBy: "Ekleyen:",
-    
     adminPanel: "KULLANICI YÖNETİMİ",
     ban: "YASAKLA",
     confirmDel: "Emin misiniz?",
