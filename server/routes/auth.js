@@ -1,73 +1,60 @@
+// server/routes/auth.js
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcryptjs'); // Şifreleme için
+const jwt = require('jsonwebtoken'); // Token oluşturmak için
 const User = require('../models/User');
 
-// KAYIT OLMA (SIGN-UP) ROTASI
+// KAYIT OL (REGISTER)
 router.post('/register', async (req, res) => {
   try {
-    const { username, email, password, role } = req.body;
+    const { username, password, role } = req.body;
 
-    // Kullanıcı zaten var mı kontrol et
-    const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ message: "Bu e-posta zaten kayıtlı." });
+    // Kullanıcı var mı kontrol et
+    const existingUser = await User.findOne({ username });
+    if (existingUser) return res.status(400).json({ message: "Bu kullanıcı adı zaten alınmış." });
 
-    // Yeni kullanıcı oluştur
-    const newUser = new User({ username, email, password, role });
+    // Şifreyi hashle
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // Yeni kullanıcı oluştur (Rol verisiyle beraber)
+    const newUser = new User({
+      username,
+      password: hashedPassword,
+      role: role || 'Ziyaretçi' // Frontend boş yollarsa varsayılan Ziyaretçi olsun
+    });
+
     await newUser.save();
+    res.status(201).json({ message: "Kullanıcı başarıyla oluşturuldu." });
 
-    res.status(201).json({ message: "Kullanıcı başarıyla oluşturuldu!", user: newUser });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    res.status(500).json({ message: "Kayıt sırasında hata oluştu.", error });
   }
 });
 
-// GİRİŞ YAPMA (LOGIN) ROTASI
+// GİRİŞ YAP (LOGIN)
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    // Kullanıcıyı bul
-    const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "Kullanıcı bulunamadı." });
+    const user = await User.findOne({ username });
+    if (!user) return res.status(404).json({ message: "Kullanıcı bulunamadı." });
 
-    // Şifre kontrolü (Şimdilik düz metin, ileride şifreleyeceğiz)
-    if (user.password !== password) {
-      return res.status(400).json({ message: "Hatalı şifre." });
-    }
+    const isPasswordCorrect = await bcrypt.compare(password, user.password);
+    if (!isPasswordCorrect) return res.status(400).json({ message: "Hatalı şifre." });
 
-    res.status(200).json({ 
-      message: "Giriş başarılı!", 
-      user: { username: user.username, role: user.role } 
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    // Token oluştur (Rol bilgisini token içine gömüyoruz)
+    const token = jwt.sign(
+      { id: user._id, username: user.username, role: user.role },
+      'GIZLI_ANAHTAR_BURAYA', // .env dosyasında saklanmalı
+      { expiresIn: '1h' }
+    );
+
+    res.status(200).json({ result: user, token });
+
+  } catch (error) {
+    res.status(500).json({ message: "Giriş sırasında hata oluştu.", error });
   }
 });
 
 module.exports = router;
-
-// --- YENİ: Filme Medya (Kanıt) Ekleme Rotası ---
-router.post('/:id/media', async (req, res) => {
-  try {
-    const { type, url, addedBy } = req.body;
-    
-    // 1. Filmi ID'sine göre bul
-    const movie = await Movie.findById(req.params.id);
-    if (!movie) return res.status(404).json({ message: "Movie not found" });
-
-    // 2. Yeni medyayı listeye ekle (push)
-    movie.media.push({
-      type,
-      url,
-      addedBy
-    });
-
-    // 3. Kaydet
-    const updatedMovie = await movie.save();
-    
-    res.status(200).json(updatedMovie);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server Error" });
-  }
-});

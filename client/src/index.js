@@ -2,13 +2,18 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
-import { LanguageProvider } from './LanguageContext'; // YENİ EKLENDİ
+import reportWebVitals from './reportWebVitals';
+// LanguageProvider'ı içe aktarıyoruz
+import { LanguageProvider } from './LanguageContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <LanguageProvider> {/* YENİ EKLENDİ */}
-        <App />
-    </LanguageProvider> {/* YENİ EKLENDİ */}
+    {/* App bileşenini LanguageProvider ile sarmalıyoruz */}
+    <LanguageProvider>
+      <App />
+    </LanguageProvider>
   </React.StrictMode>
 );
+
+reportWebVitals();

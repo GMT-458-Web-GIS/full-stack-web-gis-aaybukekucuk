@@ -6,7 +6,7 @@ const UserSchema = new mongoose.Schema({
   password: { type: String, required: true },
   role: { 
     type: String, 
-    enum: ['Admin', 'Sinefil', 'Ziyaretçi'], // Ödevdeki 3 Rol Zorunluluğu
+    enum: ['Admin', 'Sinefil', 'Ziyaretçi'], // 3 Rol Şartı Tamamlandı ✅
     default: 'Ziyaretçi' 
   }
 });
