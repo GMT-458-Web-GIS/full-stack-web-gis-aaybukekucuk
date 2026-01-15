@@ -15,7 +15,14 @@ const User = require('./models/User'); // User modelini en başta çağırıyoru
 const app = express();
 
 // --- MIDDLEWARE ---
-app.use(cors());
+const cors = require('cors');
+
+// En güvenli ayar: Her yerden gelen isteğe izin ver
+app.use(cors({
+  origin: "*", 
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 app.use(express.json());
 
 // --- GÜVENLİK AYARLARI (CSP) ---

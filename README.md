@@ -97,6 +97,22 @@ The application integrates an industrial-grade GIS server (GeoServer) to provide
 
 ---
 
+## 8. Deployment Strategy & Technical Constraints
+
+The Cinemap application is architected to be cloud-compatible; however, for the final presentation, the system is hosted on a **Local GIS Server Environment**. This decision was made based on several technical factors:
+
+### Why Local Environment?
+
+| Factor | Technical Reason |
+| :--- | :--- |
+| **GeoServer Resources** | GeoServer is a high-performance Java-based application that requires significant RAM and CPU. Free cloud hosting tiers are insufficient for stable GIS rendering. |
+| **Spatial Synchronization** | To maintain 100% data integrity between the MongoDB NoSQL database and the GeoServer WMS layers, a low-latency local connection is required. |
+| **Tunneling Limitations** | Standard tunneling services (like ngrok/localtunnel) restrict multiple concurrent ports (3000, 5000, and 8080). Forcing these through a single tunnel can cause "503 Tunnel Unavailable" errors during spatial queries. |
+| **Presentation Stability** | Hosting the project locally ensures that the map rendering and movie filtering functions perform at maximum speed without dependency on external network speeds. |
+
+### Conclusion
+By utilizing a local GIS stack, the project demonstrates a fully functional "Professional GIS Workstation" setup, ensuring that all spatial operations (CRUD, WMS filtering, and Marker Clustering) remain stable and responsive during evaluation.
+
 ## Installation Guide
 
 ### Prerequisites
@@ -112,5 +128,4 @@ The application integrates an industrial-grade GIS server (GeoServer) to provide
 
 ---
 **Course:** GMT 458 - Web Based Geographic Information Systems  
-**Project Owner:** [Your Name]  
-**Academic Year:** 2025-2026
+**Project Owner:** [Aybüke Küçük]
