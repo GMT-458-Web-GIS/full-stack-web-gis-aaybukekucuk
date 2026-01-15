@@ -1,576 +1,242 @@
-/* App.css - Premium Cinema Dark UI */
+/* App.css – Web Cinemap | Netflix Red Cinema UI */
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&family=Open+Sans:wght@300;400&display=swap');
 
 :root {
-  --primary-red: #E50914; /* Netflix kırmızısına yakın, tok bir kırmızı */
-  --bg-dark: #141414;     /* Tam siyah değil, göz yormayan derin gri */
-  --sidebar-bg: #000000;
-  --text-primary: #ffffff;
-  --text-secondary: #b3b3b3;
-  --input-bg: #333333;
+  --red: #E50914;
+  --red-dark: #b20710;
+  --bg-black: #0b0b0b;
+  --panel-black: #141414;
+  --panel-border: #2a2a2a;
+  --text-main: #ffffff;
+  --text-muted: #b3b3b3;
 }
 
-body, html {
+* {
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+html, body {
   margin: 0;
-  padding: 0;
   height: 100%;
-  font-family: 'Open Sans', sans-serif; /* Okunabilirlik için */
-  background-color: var(--bg-dark);
-  color: var(--text-primary);
+  background: var(--bg-black);
+  color: var(--text-main);
+  font-family: 'Open Sans', sans-serif;
   overflow: hidden;
 }
 
 .app-container {
   display: flex;
   height: 100vh;
-  width: 100vw;
 }
 
-/* --- SOL PANEL (SIDEBAR) --- */
+/* ================= SIDEBAR ================= */
 .sidebar {
-  width: 400px;
-  background-color: var(--sidebar-bg);
-  padding: 3rem 2.5rem;
+  width: 390px;
+  background: linear-gradient(
+    180deg,
+    #000000 0%,
+    #0f0f0f 40%,
+    #000000 100%
+  );
+  padding: 28px 26px;
   display: flex;
   flex-direction: column;
-  box-shadow: 5px 0 30px rgba(0,0,0,0.8); /* Derinlik hissi */
-  z-index: 1000;
-  position: relative;
+  border-right: 1px solid #1f1f1f;
+  box-shadow: 8px 0 40px rgba(0,0,0,0.9);
 }
 
-/* Logo / Başlık */
+/* Logo */
 .sidebar h1 {
   font-family: 'Montserrat', sans-serif;
+  font-size: 42px;
   font-weight: 800;
-  font-size: 3rem;
+  color: var(--red);
   margin: 0;
   letter-spacing: -1px;
-  color: var(--primary-red);
-  text-transform: uppercase;
-  line-height: 1;
 }
 
 .sidebar p {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 0.9rem;
-  color: var(--text-secondary);
-  margin-top: 10px;
-  margin-bottom: 3rem;
-  font-weight: 400;
+  margin: 6px 0 28px 0;
+  font-size: 11px;
+  color: var(--text-muted);
   letter-spacing: 2px;
   text-transform: uppercase;
-  border-left: 3px solid var(--text-secondary);
+  border-left: 3px solid var(--red);
   padding-left: 10px;
 }
 
-/* Filtre Bölümü */
-.filter-section {
-  margin-top: 20px;
-}
-
-.filter-section label {
-  display: block;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  margin-bottom: 10px;
-  font-weight: 600;
-}
-
-/* Select Box Tasarımı */
-select {
-  width: 100%;
-  padding: 15px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: white;
-  font-size: 1rem;
-  border-radius: 4px;
-  outline: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  appearance: none; /* Standart ok işaretini kaldırır */
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23b3b3b3%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
-  background-repeat: no-repeat;
-  background-position: right 15px top 50%;
-  background-size: 12px auto;
-}
-
-select:hover, select:focus {
-  background-color: rgba(255, 255, 255, 0.15);
-  border-color: var(--primary-red);
-}
-
-select option {
-  background-color: var(--bg-dark);
-  color: white;
-}
-
-/* Alt Bilgi */
-.sidebar .footer-info {
-  margin-top: auto;
-  font-size: 0.75rem;
-  color: #555;
-  text-align: center;
-  border-top: 1px solid #222;
-  padding-top: 20px;
-}
-
-/* --- HARİTA ALANI --- */
-.map-area {
-  flex: 1;
-  position: relative;
-  background-color: var(--bg-dark); /* Harita yüklenirken siyah kalsın */
-}
-
-/* Leaflet Popup (Balon) Özelleştirme */
-.leaflet-popup-content-wrapper {
-  background: rgba(20, 20, 20, 0.95) !important;
-  color: white !important;
-  border-radius: 0px !important;
-  border-left: 3px solid var(--primary-red);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-  font-family: 'Open Sans', sans-serif;
-}
-
-.leaflet-popup-tip {
-  background: rgba(20, 20, 20, 0.95) !important;
-}
-
-.leaflet-container a {
-  color: var(--primary-red) !important; /* Link renkleri */
-}
-
-/* --- LOGIN EKRANI TASARIMI --- */
-.login-container {
-  height: 100vh;
-  width: 100vw;
-  
-  /* DEĞİŞİKLİK BURADA: 
-     rgba(0,0,0, 0.85) yaptık. 
-     Sayı 1'e ne kadar yaklaşırsa resim o kadar kararır/silikleşir.
-     Daha da silik olsun istersen 0.9 yapabilirsin.
-  */
-  background-image: linear-gradient(rgba(0,0,0, 0.85), rgba(0,0,0, 0.45)), url('./background.jpg');
-  
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.login-box {
-  /* Kutunun arka planını %80 siyah yaptık (0.8). 
-     Böylece arkadaki senin hazırladığın görsel kutunun içinden hafifçe görünür. 
-  */
-  background-color: rgba(0, 0, 0, 0.75); 
-  padding: 60px;
-  border-radius: 8px; /* Köşeleri biraz daha yumuşattık */
-  width: 100%;
-  max-width: 450px;
-  text-align: center;
-  box-shadow: 0 0 20px rgba(0,0,0,0.5);
-  backdrop-filter: blur(5px); /* BU ÇOK HAVALI: Kutunun arkasını buzlu cam gibi yapar! */
-  border: 1px solid rgba(255, 255, 255, 0.1); /* İnce bir çerçeve */
-}
-.login-box input, .login-box select {
-  width: 100%;
-  padding: 16px;
-  margin-bottom: 16px;
-  background: #333;
-  border: none;
-  border-radius: 4px;
-  color: white;
-  font-size: 1rem;
-  box-sizing: border-box; /* Kutunun taşmasını engeller */
-}
-
-.login-btn {
-  width: 100%;
-  padding: 16px;
-  background-color: #E50914;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  margin-top: 10px;
-  transition: background 0.3s;
-}
-
-.login-btn:hover {
-  background-color: #f40612;
-}
-
-.error-msg {
-  background: #e87c03;
-  color: white;
-  padding: 10px;
-  border-radius: 4px;
-  margin-bottom: 15px;
-  font-size: 0.9rem;
-  text-align: left;
-}
-
-/* --- CLUSTER (KÜME) RENKLERİNİ KIRMIZI YAPMA --- */
-
-/* Küçük Kümeler (Eskiden Yeşildi) -> Şimdi Kırmızı */
-.marker-cluster-small {
-  background-color: rgba(229, 9, 20, 0.6) !important; /* Netflix Kırmızısı (Şeffaf) */
-}
-.marker-cluster-small div {
-  background-color: rgba(229, 9, 20, 0.9) !important; /* Merkez Kırmızı */
-  color: white !important;
-  font-weight: bold;
-}
-
-/* Orta Kümeler (Eskiden Sarıydı) -> Şimdi Koyu Kırmızı */
-.marker-cluster-medium {
-  background-color: rgba(180, 0, 0, 0.6) !important;
-}
-.marker-cluster-medium div {
-  background-color: rgba(180, 0, 0, 0.9) !important;
-  color: white !important;
-  font-weight: bold;
-}
-
-/* Büyük Kümeler (Eskiden Maviydi) -> Şimdi Bordo */
-.marker-cluster-large {
-  background-color: rgba(100, 0, 0, 0.6) !important;
-}
-.marker-cluster-large div {
-  background-color: rgba(100, 0, 0, 0.9) !important;
-  color: white !important;
-  font-weight: bold;
-}
-
-/* Heatmap Canvas Ayarı (Garanti Olsun) */
-.leaflet-heatmap-layer {
-  opacity: 0.8;
-}
-
-/* --- SİNEMATİK KIRMIZI NOKTA MARKER (REC DOT) --- */
-.custom-rec-marker {
-  background-color: #E50914; /* Netflix Kırmızısı */
-  width: 14px;
-  height: 14px;
-  border-radius: 50%; /* Yuvarlak yap */
-  border: 2px solid #ffffff; /* Beyaz çerçeve */
-  box-shadow: 0 0 8px rgba(229, 9, 20, 0.9); /* PARLAMA EFEKTİ (GLOW) */
-  transition: transform 0.2s ease;
-}
-
-/* Üzerine gelince biraz büyüsün */
-.custom-rec-marker:hover {
-  transform: scale(1.3);
-  background-color: #ff3333;
-  cursor: pointer;
-}
-
-/* --- SIDEBAR & PANEL TASARIM GÜNCELLEMELERİ --- */
-
-/* Genel Sidebar Düzeni */
-.sidebar {
-  padding: 25px !important;
-  background-color: #000000 !important; /* Tam siyah */
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-/* 1. SEKMELER (NAV BUTTONS) */
+/* ================= NAV ================= */
 .nav-row {
   display: flex;
-  gap: 8px; /* Butonlar arası boşluk */
-  margin-top: 20px;
-  margin-bottom: 20px;
-  flex-wrap: wrap; /* Sığmazsa alt satıra geçmesin, boyut küçülsün diye wrap'i kapatabiliriz ama mobilde lazım olabilir */
+  gap: 10px;
+  margin-bottom: 26px;
 }
 
 .nav-btn {
-  flex: 1; /* Hepsi eşit genişlikte olsun */
-  padding: 12px 5px; /* Dikey boşluk iyi, yatay dar */
-  background-color: #1f1f1f;
-  color: #888;
-  border: 1px solid #333;
-  cursor: pointer;
-  font-size: 11px; /* Fontu küçülttük ki sığsın */
+  flex: 1;
+  padding: 14px 6px;
+  background: linear-gradient(180deg, #1a1a1a, #0f0f0f);
+  color: #999;
+  border: 1px solid var(--panel-border);
+  font-size: 11px;
   font-weight: 700;
-  border-radius: 4px;
-  transition: all 0.3s ease;
-  white-space: nowrap; /* Yazı alt satıra kaymasın */
-  text-align: center;
-  letter-spacing: 0.5px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.25s ease;
 }
 
 .nav-btn:hover {
-  background-color: #333;
-  color: white;
-  border-color: #555;
+  color: #fff;
+  border-color: var(--red);
 }
 
 .nav-btn.active {
-  background-color: #E50914; /* Netflix Kırmızısı */
-  color: white;
-  border-color: #E50914;
-  box-shadow: 0 0 10px rgba(229, 9, 20, 0.4);
+  background: linear-gradient(180deg, var(--red), var(--red-dark));
+  color: #fff;
+  border-color: var(--red);
+  box-shadow: 0 0 18px rgba(229,9,20,0.6);
 }
 
-/* 2. LENS MODE KUTUSU */
-.control-panel {
+/* ================= PANELS ================= */
+.control-panel,
+.daily-card {
+  background: linear-gradient(180deg, #161616, #0e0e0e);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 16px;
   margin-bottom: 20px;
-  padding: 15px;
-  background: #121212;
-  border-radius: 6px;
-  border: 1px solid #2a2a2a;
 }
 
+/* Panel label */
 .panel-label {
-  display: block;
-  margin-bottom: 10px;
-  font-size: 10px;
-  color: #E50914;
+  font-size: 11px;
   font-weight: 800;
+  color: var(--red);
   letter-spacing: 1.5px;
+  margin-bottom: 12px;
   text-transform: uppercase;
 }
 
+/* Lens buttons */
 .mode-btn {
-  flex: 1;
-  padding: 10px;
-  background: transparent;
-  color: #666;
-  border: 1px solid #333;
-  cursor: pointer;
+  background: #101010;
+  border: 1px solid var(--panel-border);
+  color: #888;
   font-size: 11px;
-  border-radius: 4px;
-  font-weight: 600;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mode-btn:hover {
+  color: #fff;
+  border-color: var(--red);
 }
 
 .mode-btn.active {
-  background: rgba(229, 9, 20, 0.1);
-  color: #E50914;
-  border: 1px solid #E50914;
+  background: rgba(229,9,20,0.15);
+  border-color: var(--red);
+  color: #fff;
+  box-shadow: inset 0 0 0 1px rgba(229,9,20,0.4);
 }
 
-/* 3. GÜNÜN FİLMİ KARTI */
+/* ================= MOVIE OF THE DAY ================= */
 .daily-card {
-  margin-bottom: 20px;
-  background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
-  padding: 15px;
-  border-radius: 6px;
-  border-left: 3px solid #f5c518; /* IMDb Sarısı */
   display: flex;
-  gap: 12px;
+  gap: 14px;
   align-items: center;
-  transition: transform 0.2s;
-}
-
-.daily-card:hover {
-  transform: translateY(-2px);
-  background: #222;
+  border-left: 4px solid #f5c518;
 }
 
 .daily-poster {
-  width: 45px;
-  height: 65px;
+  width: 48px;
+  height: 70px;
   object-fit: cover;
-  border-radius: 3px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.7);
 }
 
 .daily-info h4 {
-  margin: 0 0 4px 0;
-  color: #f5c518;
   font-size: 10px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
+  color: #f5c518;
+  letter-spacing: 1.5px;
+  margin: 0 0 4px 0;
 }
 
 .daily-info strong {
   display: block;
-  color: white;
-  font-size: 13px;
-  line-height: 1.2;
-  margin-bottom: 3px;
+  font-size: 14px;
+  margin-bottom: 2px;
 }
 
 .daily-info small {
-  color: #888;
-  font-size: 10px;
-}
-
-/* 4. FİLTRELER VE INPUTLAR */
-select, input {
-  width: 100%;
-  padding: 10px;
-  background: #1a1a1a;
-  color: white;
-  border: 1px solid #333;
-  border-radius: 4px;
-  font-size: 12px;
-  outline: none;
-}
-
-select:focus, input:focus {
-  border-color: #E50914;
-}
-
-label.filter-label {
-  display: block;
-  margin-bottom: 6px;
   font-size: 11px;
-  color: #aaa;
-  font-weight: 600;
+  color: var(--text-muted);
 }
 
-/* --- APP.CSS EN ALTINA EKLE --- */
+/* ================= INPUTS ================= */
+select,
+input {
+  width: 100%;
+  padding: 12px;
+  background: #101010;
+  color: #fff;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  font-size: 12px;
+}
 
-/* FİLMLER İÇİN KIRMIZI NOKTA (Zaten vardı, dursun) */
+select:focus,
+input:focus {
+  outline: none;
+  border-color: var(--red);
+  box-shadow: 0 0 0 1px rgba(229,9,20,0.5);
+}
+
+/* ================= MAP ================= */
+.map-area {
+  flex: 1;
+  background: #080808;
+}
+
+/* ================= MARKERS ================= */
 .custom-rec-marker {
-  background-color: #E50914;
+  background-color: var(--red);
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  border: 2px solid #ffffff;
-  box-shadow: 0 0 8px rgba(229, 9, 20, 0.9);
+  border: 2px solid #fff;
+  box-shadow: 0 0 12px rgba(229,9,20,0.9);
   transition: transform 0.2s ease;
 }
+
 .custom-rec-marker:hover {
   transform: scale(1.3);
-  background-color: #ff3333;
-  cursor: pointer;
 }
 
-/* --- YENİ: KULLANICI KONUMU İÇİN MAVİ NOKTA (USER DOT) --- */
 .custom-user-marker {
-  background-color: #007bff; /* Parlak Mavi */
+  background-color: #1e90ff;
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  border: 3px solid #ffffff;
-  box-shadow: 0 0 15px rgba(0, 123, 255, 0.8); /* Mavi Parlama */
-  animation: pulse 2s infinite; /* Yanıp sönme efekti */
+  border: 3px solid #fff;
+  box-shadow: 0 0 16px rgba(30,144,255,0.8);
 }
 
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7); }
-  70% { box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
-}
-
-/* --- CANLI ETKİNLİK AKIŞI (ACTIVITY FEED) --- */
-.activity-feed-container {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  width: 250px;
-  background: rgba(0, 0, 0, 0.85); /* Yarı saydam siyah */
-  border-radius: 8px;
-  padding: 10px;
-  z-index: 1000; /* Haritanın üstünde dursun */
-  border: 1px solid #333;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.8);
-  font-family: 'Segoe UI', sans-serif;
-  backdrop-filter: blur(5px);
-  animation: fadeIn 1s ease;
-}
-
-.feed-header {
-  font-size: 11px;
-  color: #E50914; /* Netflix Kırmızısı */
-  font-weight: bold;
-  letter-spacing: 1px;
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-/* Yanıp sönen kayıt ışığı */
-.blink-dot {
-  width: 8px;
-  height: 8px;
-  background-color: #E50914;
-  border-radius: 50%;
-  animation: blinker 1.5s linear infinite;
-}
-
-@keyframes blinker {
-  50% { opacity: 0; }
-}
-
-.feed-item {
-  font-size: 11px;
-  color: #ddd;
-  padding: 8px 0;
-  border-top: 1px solid #333;
-  cursor: pointer;
-  transition: all 0.2s;
-  line-height: 1.4;
-}
-
-.feed-item:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
-  padding-left: 5px;
-}
-
-.feed-user {
-  font-weight: bold;
-  color: #fff;
-}
-
-.feed-movie {
-  color: #E50914;
-  font-weight: bold;
-}
-
-.feed-loc {
-  color: #888;
-  font-style: italic;
-}
-
-/* --- SİNEMATİK DARK POPUP TASARIMI --- */
-
-/* Baloncuğun Gövdesi */
+/* ================= POPUP ================= */
 .leaflet-popup-content-wrapper {
-  background-color: #141414 !important; /* Tam Siyah Arka Plan */
-  color: #ffffff !important; /* Varsayılan Yazı Beyaz */
-  border: 1px solid #E50914; /* İnce Kırmızı Çerçeve */
-  border-radius: 4px !important;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.8) !important;
+  background: #141414 !important;
+  color: #fff !important;
+  border-radius: 6px;
+  border: 1px solid var(--red);
+  box-shadow: 0 6px 25px rgba(0,0,0,0.85);
 }
 
-/* Baloncuğun Ucundaki Üçgen */
 .leaflet-popup-tip {
-  background-color: #141414 !important;
-  border: 1px solid #E50914; 
-  border-top: none; /* Çerçeve bütünlüğü için */
+  background: #141414 !important;
+  border: 1px solid var(--red);
+  border-top: none;
   border-left: none;
-}
-
-/* Kapatma (X) Butonu */
-.leaflet-container a.leaflet-popup-close-button {
-  color: #E50914 !important; /* Kırmızı X */
-  font-size: 18px !important;
-  font-weight: bold;
-  padding: 5px;
-}
-
-.leaflet-container a.leaflet-popup-close-button:hover {
-  color: #fff !important; /* Üzerine gelince Beyaz */
-}
-
-/* Popup İçeriği */
-.leaflet-popup-content {
-  margin: 10px 15px !important;
-  line-height: 1.5;
-  min-width: 240px !important; /* Genişlik ayarı */
 }
