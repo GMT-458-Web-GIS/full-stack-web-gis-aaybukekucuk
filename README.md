@@ -1,6 +1,6 @@
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/dxPbR2Gs)
 
-# Cinemap: A Comprehensive Web-GIS Platform for Movie Production Analytics
+# 🎦 Cinemap: A Comprehensive Web-GIS Platform for Movie Production Analytics
 
 Cinemap is a high-performance Web Geographic Information System (Web-GIS) designed to map, analyze, and manage movie filming locations globally. The project integrates real-time spatial data management with advanced server-side GIS rendering, providing a cinematic user experience for film industry analysts and movie enthusiasts.
 
@@ -12,8 +12,10 @@ The user interface is designed with a "Cinematic Dark Mode" aesthetic, prioritiz
 - **Interactive Map Layers:** Users can toggle between Marker Clustering, Heatmaps, and WMS layers to change their analytical perspective.
 - **Visual Feedback:** High-contrast markers and glowing "REC" icons are used to represent spatial points, maintaining the cinematic theme.
 
-**(IMAGE: Place a high-quality screenshot of the main map interface here. It should show the dark-themed sidebar on the left and the map on the right.)**
-
+**![Interface Design](./images/1.png)**
+**![Interface Design](./images/2.png)**
+**![Interface Design](./images/3.png)**
+**![Interface Design](./images/5.png)**
 ---
 
 ## 2. Technical Architecture
@@ -41,7 +43,8 @@ To ensure data security and integrity, the system implements a strict permission
 | **Cinephile** | Contributor | Adding filming locations, uploading media (scenes), and editing own data. |
 | **Ticket Holder** | Observer | Exploring the map, using spatial filters, and managing a personal watchlist. |
 
-**(IMAGE: Place a screenshot of the Login screen and a view of the User Management table from the Admin panel here.)**
+**![Users](./images/20.png)**
+**![Users](./images/5.png)**
 
 ---
 
@@ -64,7 +67,7 @@ The backend exposes a robust REST API for seamless communication between the map
 - **PUT /api/movies/:id:** Facilitates the modification of existing spatial data and attributes.
 - **DELETE /api/movies/:id:** Provides safe removal of records by authorized personnel.
 
-**(IMAGE: Place a screenshot of the Swagger UI documentation here, showing the expanded list of API endpoints.)**
+**![Swagger Documentation](./images/10.png)**
 
 ---
 
@@ -82,11 +85,22 @@ To validate the system's reliability, a stress test was conducted using Artiller
 - **Error Rate:** 0% (Zero ECONNREFUSED or Timeout errors).
 - **Latency (p95):** 162.4ms (Ensuring a smooth experience for users).
 
-**(IMAGE: Place a screenshot of the terminal showing the successful Artillery Summary Report with 0 failures.)**
+**![Swagger Documentation](./images/10.png)**
+
+---
+## 7. User Management & Access Control (20%)
+
+The system is designed with a Role-Based Access Control (RBAC) model. For testing and evaluation purposes, the following user profiles have been pre-configured in the database:
+
+| Role | Test Username | Permissions |
+| :--- | :--- | :--- |
+| **Admin** | Full CRUD access, can delete any movie entry or user account. |
+| **Cinephile** | Can add new movie locations and edit their own contributions. |
+| **Ticket Holder / Viewer** | View-only access to the global map and personal watchlist feature. |
 
 ---
 
-## 7. GeoServer and WMS Implementation (25%)
+## 8. GeoServer and WMS Implementation (25%)
 
 The application integrates an industrial-grade GIS server (GeoServer) to provide advanced spatial layers via the WMS protocol.
 
@@ -97,7 +111,7 @@ The application integrates an industrial-grade GIS server (GeoServer) to provide
 
 ---
 
-## 8. Deployment Strategy & Technical Constraints
+## 9. Deployment Strategy & Technical Constraints
 
 The Cinemap application is architected to be cloud-compatible; however, for the final presentation, the system is hosted on a **Local GIS Server Environment**. This decision was made based on several technical factors:
 

@@ -376,11 +376,11 @@ function App() {
                                 borderColor: '#E50914', 
                                 color: showPolygons ? 'white' : '#E50914', 
                                 background: showPolygons ? '#E50914' : 'transparent',
-                                flex: '1 0 45%',
-                                marginTop: '5px'
+                                flex: '1 0 80%',
+                                marginTop: '10px'
                             }}
                           >
-                            {showPolygons ? 'HIDE CENTERS' : 'CENTERS 🎥'}
+                            {showPolygons ? 'HIDE CENTERS' : 'CENTERS'}
                           </button>
 
                           {/* GEOSERVER BUTONU */}
