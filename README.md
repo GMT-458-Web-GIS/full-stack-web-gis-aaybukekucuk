@@ -1,6 +1,6 @@
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/dxPbR2Gs)
 
-# 🎦 Cinemap: A Comprehensive Web-GIS Platform for Movie Production Analytics
+# 🎦 Cinemap: Movie Production Analytics
 
 Cinemap is a high-performance Web Geographic Information System (Web-GIS) designed to map, analyze, and manage movie filming locations globally. The project integrates real-time spatial data management with advanced server-side GIS rendering, providing a cinematic user experience for film industry analysts and movie enthusiasts.
 
@@ -15,7 +15,6 @@ The user interface is designed with a "Cinematic Dark Mode" aesthetic, prioritiz
 **![Interface Design](./images/1.png)**
 **![Interface Design](./images/2.png)**
 **![Interface Design](./images/3.png)**
-**![Interface Design](./images/5.png)**
 ---
 
 ## 2. Technical Architecture
@@ -44,8 +43,6 @@ To ensure data security and integrity, the system implements a strict permission
 | **Ticket Holder** | Observer | Exploring the map, using spatial filters, and managing a personal watchlist. |
 
 **![Users](./images/20.png)**
-**![Users](./images/5.png)**
-
 ---
 
 ## 4. NoSQL Data Management (25%)
@@ -85,7 +82,8 @@ To validate the system's reliability, a stress test was conducted using Artiller
 - **Error Rate:** 0% (Zero ECONNREFUSED or Timeout errors).
 - **Latency (p95):** 162.4ms (Ensuring a smooth experience for users).
 
-**![Swagger Documentation](./images/10.png)**
+**![Performance Analysis](./images/333.png)**
+**![Performance Analysis](./images/3333.png)**
 
 ---
 ## 7. User Management & Access Control (20%)
@@ -98,6 +96,8 @@ The system is designed with a Role-Based Access Control (RBAC) model. For testin
 | **Cinephile** | Can add new movie locations and edit their own contributions. |
 | **Ticket Holder / Viewer** | View-only access to the global map and personal watchlist feature. |
 
+**![Users](./images/5.png)**
+
 ---
 
 ## 8. GeoServer and WMS Implementation (25%)
@@ -107,7 +107,10 @@ The application integrates an industrial-grade GIS server (GeoServer) to provide
 - **Interoperability:** The system combines client-side rendered MongoDB points with server-side rendered GeoServer polygons.
 - **Layer Details:** The integrated `topp:states` layer demonstrates the system's ability to handle complex vector data rendered as tiles for optimal performance.
 
-**(IMAGE: Place a screenshot here showing the map with the colored GeoServer USA state boundaries layer visible over the base map.)**
+**![Geoserver](./images/9.png)**
+**![Geoserver](./images/8.png)**
+**![Geoserver](./images/6.png)**
+
 
 ---
 
@@ -138,6 +141,9 @@ By utilizing a local GIS stack, the project demonstrates a fully functional "Pro
 1. **Database:** Ensure MongoDB is active and the connection string is configured.
 2. **Server:** Navigate to `/server`, run `npm install`, then `node index.js`.
 3. **Client:** Navigate to `/client`, run `npm install`, then `npm start`.
+   
+   **![Server/client](./images/44.png)**
+
 4. **GIS Server:** Start GeoServer and ensure the WMS service is enabled for the workspace.
 
 ---
